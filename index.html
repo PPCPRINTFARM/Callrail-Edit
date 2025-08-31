@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CallRail CRM</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { Phone, User, DollarSign, Clock, Plus } = lucide;
+
+        const CallRailCRM = () => {
+          const [activeTab, setActiveTab] = React.useState('dashboard');
+          const [showModal, setShowModal] = React.useState(false);
+          const [editingLead, setEditingLead] = React.useState(null);
+
+          const [leads, setLeads] = React.useState([
+            {
+              id: 1,
+              name: 'John Smith',
+              company: 'Smith Construction',
+              phone: '(555) 123-4567',
+              email: 'john@smithconstruction.com',
+              source: 'Google Ads',
+              status: 'New',
+              value: 15000,
+              tags: ['hot-lead', 'residential']
+            },
+            {
+              id: 2,
+              name: 'Sarah Johnson',
+              company: 'Johnson Real Estate',
+              phone: '(555) 987-6543',
+              email: 'sarah@johnsonre.com',
+              source: 'Facebook Ads',
+              status: 'Qualified',
+              value: 8500,
+              tags: ['commercial', 'qualified']
+            },
+            {
+              id: 3,
+              name: 'Mike Davis',
+              company: 'Davis Plumbing',
+              phone: '(555) 456-7890',
+              email: 'mike@davisplumbing.com',
+              source: 'Organic Search',
+              status: 'Proposal',
+              value: 25000,
+              tags: ['high-value', 'proposal-sent']
+            }
+          ]);
+
+          const calls = [
+            { id: 1, leadName: 'John Smith', phone: '(555) 123-4567', date: '2025-08-30', duration: '5:24', type: 'Inbound', value: 15000 },
+            { id: 2, leadName: 'Sarah Johnson', phone: '(555) 987-6543', date: '2025-08-29', duration: '2:36', type: 'Inbound', value: 8500 },
+            { id: 3, leadName: 'Mike Davis', phone: '(555) 456-7890', date: '2025-08-28', duration: '7:58', type: 'Outbound', value: 25000 }
+          ];
+
+          const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
+          };
+
+          const handleEditLead = (lead) => {
+            setEditingLead(lead);
+            setShowModal(true);
+          };
+
+          const handleAddLead = () => {
+            setEditingLead(null);
+            setShowModal(true);
+          };
+
+          const handleDeleteLead = (leadId) => {
+            if (window.confirm('Are you sure you want to delete this lead?')) {
+              setLeads(leads.filter(lead => lead.id !== leadId));
+            }
+          };
+
+          const handleSaveLead = (formData) => {
+            if (editingLead) {
+              setLeads(leads.map(lead => 
+                lead.id === editingLead.id ? { ...lead, ...formData } : lead
+              ));
+            } else {
+              const newLead = {
+                ...formData,
+                id: Math.max(...leads.map(l => l.id)) + 1,
+                status: 'New'
+              };
+              setLeads([...leads, newLead]);
+            }
+            setShowModal(false);
+            setEditingLead(null);
+          };
+
+          const LeadModal = () => {
+            const [formData, setFormData] = React.useState({
+              name: editingLead?.name || '',
+              company: editingLead?.company || '',
+              phone: editingLead?.phone || '',
+              email: editingLead?.email || '',
+              source: editingLead?.source || 'Google Ads',
+              status: editingLead?.status || 'New',
+              value: editingLead?.value || 0,
+              tags: editingLead?.tags?.join(', ') || ''
+            });
+
+            const handleSubmit = () => {
+              const leadData = {
+                ...formData,
+                tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
+                value: parseInt(formData.value) || 0
+              };
+              handleSaveLead(leadData);
+            };
+
+            return React.createElement('div', {className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"},
+              React.createElement('div', {className: "bg-white rounded-lg p-6 w-full max-w-lg"},
+                React.createElement('h3', {className: "text-lg font-bold mb-4"}, editingLead ? 'Edit Lead' : 'Add New Lead'),
+                React.createElement('div', {className: "space-y-4"},
+                  React.createElement('div', {className: "grid grid-cols-2 gap-4"},
+                    React.createElement('div', null,
+                      React.createElement('label', {className: "block text-sm font-medium mb-1"}, 'Name'),
+                      React.createElement('input', {
+                        type: "text",
+                        value: formData.name,
+                        onChange: (e) => setFormData({...formData, name: e.target.value}),
+                        className: "w-full px-3 py-2 border rounded-lg",
+                        placeholder: "John Smith"
+                      })
+                    ),
+                    React.createElement('div', null,
+                      React.createElement('label', {className: "block text-sm font-medium mb-1"}, 'Company'),
+                      React.createElement('input', {
+                        type: "text",
+                        value: formData.company,
+                        onChange: (e) => setFormData({...formData, company: e.target.value}),
+                        className: "w-full px-3 py-2 border rounded-lg",
+                        placeholder: "ABC Corp"
+                      })
+                    )
+                  ),
+                  React.createElement('div', {className: "grid grid-cols-2 gap-4"},
+                    React.createElement('div', null,
+                      React.createElement('label', {className: "block text-sm font-medium mb-1"}, 'Phone'),
+                      React.createElement('input', {
+                        type: "tel",
+                        value: formData.phone,
+                        onChange: (e) => setFormData({...formData, phone: e.target.value}),
+                        className: "w-full px-3 py-2 border rounded-lg",
+                        placeholder: "(555) 123-4567"
+                      })
+                    ),
+                    React.createElement('div', null,
+                      React.createElement('label', {className: "block text-sm font-medium mb-1"}, 'Email'),
+                      React.createElement('input', {
+                        type: "email",
+                        value: formData.email,
+                        onChange: (e) => setFormData({...formData, email: e.target.value}),
+                        className: "w-full px-3 py-2 border rounded-lg",
+                        placeholder: "john@example.com"
+                      })
+                    )
+                  ),
+                  React.createElement('div', {className: "grid grid-cols-3 gap-4"},
+                    React.createElement('div', null,
+                      React.createElement('label', {className: "block text-sm font-medium mb-1"}, 'Status'),
+                      React.createElement('select', {
+                        value: formData.status,
+                        onChange: (e) => setFormData({...formData, status: e.target.value}),
+                        className: "w-full px-3 py-2 border rounded-lg"
+                      },
+                        React.createElement('option', null, 'New'),
+                        React.createElement('option', null, 'Qualified'),
+                        React.createElement('option', null, 'Proposal'),
+                        React.createElement('option', null, 'Won'),
+                        React.createElement('option', null, 'Lost')
+                      )
+                    ),
+                    React.createElement('div', null,
+                      React.createElement('label', {className: "block text-sm font-medium mb-1"}, 'Value ($)'),
+                      React.createElement('input', {
+                        type: "number",
+                        value: formData.value,
+                        onChange: (e) => setFormData({...formData, value: e.target.value}),
+                        className: "w-full px-3 py-2 border rounded-lg",
+                        placeholder: "10000"
+                      })
+                    ),
+                    React.createElement('div', null,
+                      React.createElement('label', {className: "block text-sm font-medium mb-1"}, 'Source'),
+                      React.createElement('select', {
+                        value: formData.source,
+                        onChange: (e) => setFormData({...formData, source: e.target.value}),
+                        className: "w-full px-3 py-2 border rounded-lg"
+                      },
+                        React.createElement('option', null, 'Google Ads'),
+                        React.createElement('option', null, 'Facebook Ads'),
+                        React.createElement('option', null, 'Organic Search'),
+                        React.createElement('option', null, 'Referral'),
+                        React.createElement('option', null, 'Direct')
+                      )
+                    )
+                  ),
+                  React.createElement('div', null,
+                    React.createElement('label', {className: "block text-sm font-medium mb-1"}, 'Tags'),
+                    React.createElement('input', {
+                      type: "text",
+                      value: formData.tags,
+                      onChange: (e) => setFormData({...formData, tags: e.target.value}),
+                      className: "w-full px-3 py-2 border rounded-lg",
+                      placeholder: "hot-lead, residential, high-value"
+                    })
+                  ),
+                  React.createElement('div', {className: "flex space-x-3 pt-4"},
+                    React.createElement('button', {
+                      onClick: handleSubmit,
+                      className: "flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                    }, editingLead ? 'Update Lead' : 'Add Lead'),
+                    React.createElement('button', {
+                      onClick: () => setShowModal(false),
+                      className: "flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
+                    }, 'Cancel')
+                  )
+                )
+              )
+            );
+          };
+
+          const Dashboard = () => (
+            React.createElement('div', {className: "space-y-6"},
+              React.createElement('div', {className: "grid grid-cols-1 md:grid-cols-4 gap-6"},
+                React.createElement('div', {className: "bg-white p-6 rounded-lg shadow border"},
+                  React.createElement('div', {className: "flex items-center justify-between"},
+                    React.createElement('div', null,
+                      React.createElement('p', {className: "text-sm text-gray-600"}, 'Total Leads'),
+                      React.createElement('p', {className: "text-2xl font-bold"}, leads.length)
+                    ),
+                    React.createElement(User, {className: "w-8 h-8 text-blue-600"})
+                  )
+                ),
+                React.createElement('div', {className: "bg-white p-6 rounded-lg shadow border"},
+                  React.createElement('div', {className: "flex items-center justify-between"},
+                    React.createElement('div', null,
+                      React.createElement('p', {className: "text-sm text-gray-600"}, 'Total Calls'),
+                      React.createElement('p', {className: "text-2xl font-bold"}, calls.length)
+                    ),
+                    React.createElement(Phone, {className: "w-8 h-8 text-green-600"})
+                  )
+                ),
+                React.createElement('div', {className: "bg-white p-6 rounded-lg shadow border"},
+                  React.createElement('div', {className: "flex items-center justify-between"},
+                    React.createElement('div', null,
+                      React.createElement('p', {className: "text-sm text-gray-600"}, 'Pipeline Value'),
+                      React.createElement('p', {className: "text-2xl font-bold"}, formatCurrency(leads.reduce((sum, lead) => sum + lead.value, 0)))
+                    ),
+                    React.createElement(DollarSign, {className: "w-8 h-8 text-yellow-600"})
+                  )
+                ),
+                React.createElement('div', {className: "bg-white p-6 rounded-lg shadow border"},
+                  React.createElement('div', {className: "flex items-center justify-between"},
+                    React.createElement('div', null,
+                      React.createElement('p', {className: "text-sm text-gray-600"}, 'Avg Call Time'),
+                      React.createElement('p', {className: "text-2xl font-bold"}, '5:19')
+                    ),
+                    React.createElement(Clock, {className: "w-8 h-8 text-purple-600"})
+                  )
+                )
+              ),
+              React.createElement('div', {className: "bg-white rounded-lg shadow border"},
+                React.createElement('div', {className: "p-6 border-b"},
+                  React.createElement('h3', {className: "text-lg font-semibold"}, 'Recent Call Activity')
+                ),
+                React.createElement('div', {className: "p-6"},
+                  React.createElement('div', {className: "space-y-4"},
+                    calls.map(call => (
+                      React.createElement('div', {key: call.id, className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg"},
+                        React.createElement('div', null,
+                          React.createElement('p', {className: "font-medium"}, call.leadName),
+                          React.createElement('p', {className: "text-sm text-gray-600"}, call.type + ' • ' + call.duration)
+                        ),
+                        React.createElement('div', {className: "text-right"},
+                          React.createElement('p', {className: "font-medium"}, formatCurrency(call.value)),
+                          React.createElement('p', {className: "text-sm text-gray-600"}, call.date)
+                        )
+                      )
+                    ))
+                  )
+                )
+              )
+            )
+          );
+
+          const Leads = () => (
+            React.createElement('div', {className: "space-y-6"},
+              React.createElement('div', {className: "flex justify-between items-center"},
+                React.createElement('h2', {className: "text-2xl font-bold"}, 'Leads'),
+                React.createElement('button', {
+                  onClick: handleAddLead,
+                  className: "bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700"
+                },
+                  React.createElement(Plus, {className: "w-4 h-4"}),
+                  React.createElement('span', null, 'Add Lead')
+                )
+              ),
+              React.createElement('div', {className: "bg-white rounded-lg shadow border"},
+                React.createElement('table', {className: "w-full"},
+                  React.createElement('thead', {className: "bg-gray-50"},
+                    React.createElement('tr', null,
+                      React.createElement('th', {className: "px-6 py-3 text-left text-sm font-medium text-gray-500"}, 'Lead'),
+                      React.createElement('th', {className: "px-6 py-3 text-left text-sm font-medium text-gray-500"}, 'Contact'),
+                      React.createElement('th', {className: "px-6 py-3 text-left text-sm font-medium text-gray-500"}, 'Source'),
+                      React.createElement('th', {className: "px-6 py-3 text-left text-sm font-medium text-gray-500"}, 'Status'),
+                      React.createElement('th', {className: "px-6 py-3 text-left text-sm font-medium text-gray-500"}, 'Value'),
+                      React.createElement('th', {className: "px-6 py-3 text-left text-sm font-medium text-gray-500"}, 'Tags'),
+                      React.createElement('th', {className: "px-6 py-3 text-left text-sm font-medium text-gray-500"}, 'Actions')
+                    )
+                  ),
+                  React.createElement('tbody', {className: "divide-y divide-gray-200"},
+                    leads.map(lead => (
+                      React.createElement('tr', {key: lead.id, className: "hover:bg-gray-50"},
+                        React.createElement('td', {className: "px-6 py-4"},
+                          React.createElement('div', null,
+                            React.createElement('div', {className: "font-medium"}, lead.name),
+                            React.createElement('div', {className: "text-sm text-gray-500"}, lead.company)
+                          )
+                        ),
+                        React.createElement('td', {className: "px-6 py-4"},
+                          React.createElement('div', null,
+                            React.createElement('div', {className: "text-sm"}, lead.phone),
+                            React.createElement('div', {className: "text-sm text-gray-500"}, lead.email)
+                          )
+                        ),
+                        React.createElement('td', {className: "px-6 py-4 text-sm"}, lead.source),
+                        React.createElement('td', {className: "px-6 py-4"},
+                          React.createElement('span', {className: `px-2 py-1 text-xs font-medium rounded-full ${
+                            lead.status === 'New' ? 'bg-blue-100 text-blue-800' :
+                            lead.status === 'Qualified' ? 'bg-green-100 text-green-800' :
+                            lead.status === 'Proposal' ? 'bg-yellow-100 text-yellow-800' :
+                            lead.status === 'Won' ? 'bg-emerald-100 text-emerald-800' :
+                            'bg-red-100 text-red-800'
+                          }`}, lead.status)
+                        ),
+                        React.createElement('td', {className: "px-6 py-4 text-sm font-medium"}, formatCurrency(lead.value)),
+                        React.createElement('td', {className: "px-6 py-4"},
+                          React.createElement('div', {className: "flex flex-wrap gap-1"},
+                            lead.tags?.map(tag => (
+                              React.createElement('span', {key: tag, className: "px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded"}, tag)
+                            ))
+                          )
+                        ),
+                        React.createElement('td', {className: "px-6 py-4"},
+                          React.createElement('div', {className: "flex space-x-2"},
+                            React.createElement('button', {
+                              onClick: () => handleEditLead(lead),
+                              className: "text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm"
+                            }, 'Edit'),
+                            React.createElement('button', {
+                              onClick: () => handleDeleteLead(lead.id),
+                              className: "text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"
+                            }, 'Delete')
+                          )
+                        )
+                      )
+                    ))
+                  )
+                )
+              )
+            )
+          );
+
+          const Calls = () => (
+            React.createElement('div', {className: "space-y-6"},
+              React.createElement('h2', {className: "text-2xl font-bold"}, 'Call History'),
+              React.createElement('div', {className: "bg-white rounded-lg shadow border"},
+                React.createElement('table', {className: "w-full"},
+                  React.createElement('thead', {className: "bg-gray-50"},
+                    React.createElement('tr', null,
+                      React.createElement('th', {className: "px-6 py-3 text-left text-sm font-medium text-gray-500"}, 'Lead'),
+                      React.createElement('th', {className: "px-6 py-3 text-left text-sm font-medium text-gray-500"}, 'Date'),
+                      React.createElement('th', {className: "px-6 py-3 text-left text-sm font-medium text-gray-500"}, 'Duration'),
+                      React.createElement('th', {className: "px-6 py-3 text-left text-sm font-medium text-gray-500"}, 'Type'),
+                      React.createElement('th', {className: "px-6 py-3 text-left text-sm font-medium text-gray-500"}, 'Value')
+                    )
+                  ),
+                  React.createElement('tbody', {className: "divide-y divide-gray-200"},
+                    calls.map(call => (
+                      React.createElement('tr', {key: call.id, className: "hover:bg-gray-50"},
+                        React.createElement('td', {className: "px-6 py-4"},
+                          React.createElement('div', {className: "font-medium"}, call.leadName),
+                          React.createElement('div', {className: "text-sm text-gray-500"}, call.phone)
+                        ),
+                        React.createElement('td', {className: "px-6 py-4 text-sm"}, call.date),
+                        React.createElement('td', {className: "px-6 py-4 text-sm"}, call.duration),
+                        React.createElement('td', {className: "px-6 py-4"},
+                          React.createElement('span', {className: `px-2 py-1 text-xs font-medium rounded-full ${
+                            call.type === 'Inbound' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                          }`}, call.type)
+                        ),
+                        React.createElement('td', {className: "px-6 py-4 text-sm font-medium"}, formatCurrency(call.value))
+                      )
+                    ))
+                  )
+                )
+              )
+            )
+          );
+
+          return (
+            React.createElement('div', {className: "min-h-screen bg-gray-50"},
+              React.createElement('header', {className: "bg-white shadow border-b"},
+                React.createElement('div', {className: "max-w-7xl mx-auto px-4 py-4"},
+                  React.createElement('div', {className: "flex items-center justify-between"},
+                    React.createElement('div', {className: "flex items-center space-x-3"},
+                      React.createElement(Phone, {className: "w-8 h-8 text-blue-600"}),
+                      React.createElement('h1', {className: "text-2xl font-bold"}, 'CallRail CRM')
+                    ),
+                    React.createElement('div', {className: "text-sm text-gray-600"}, 'Phoenix, AZ')
+                  )
+                )
+              ),
+              React.createElement('nav', {className: "bg-white border-b"},
+                React.createElement('div', {className: "max-w-7xl mx-auto px-4"},
+                  React.createElement('div', {className: "flex space-x-8"},
+                    ['dashboard', 'leads', 'calls'].map(tab => (
+                      React.createElement('button', {
+                        key: tab,
+                        onClick: () => setActiveTab(tab),
+                        className: `py-4 px-2 border-b-2 font-medium text-sm capitalize ${
+                          activeTab === tab
+                            ? 'border-blue-500 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`
+                      }, tab)
+                    ))
+                  )
+                )
+              ),
+              React.createElement('main', {className: "max-w-7xl mx-auto px-4 py-8"},
+                activeTab === 'dashboard' && React.createElement(Dashboard),
+                activeTab === 'leads' && React.createElement(Leads),
+                activeTab === 'calls' && React.createElement(Calls)
+              ),
+              showModal && React.createElement(LeadModal)
+            )
+          );
+        };
+
+        ReactDOM.render(React.createElement(CallRailCRM), document.getElementById('root'));
+    </script>
+</body>
+</html>
