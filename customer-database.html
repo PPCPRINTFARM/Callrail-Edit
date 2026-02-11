@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Database - Mega Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .search-highlight { background-color: #fef08a; padding: 1px 2px; border-radius: 2px; }
+        .modal-overlay { background: rgba(0,0,0,0.5); }
+        .interaction-timeline::before {
+            content: '';
+            position: absolute;
+            left: 1.25rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e5e7eb;
+        }
+        .tab-active { border-color: #2563eb; color: #2563eb; }
+        .badge-call { background: #dbeafe; color: #1e40af; }
+        .badge-order { background: #d1fae5; color: #065f46; }
+        .badge-draft { background: #fef3c7; color: #92400e; }
+        .badge-email { background: #ede9fe; color: #5b21b6; }
+        .badge-note { background: #f3f4f6; color: #374151; }
+        .fade-in { animation: fadeIn 0.2s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Top Bar -->
+    <header class="bg-gradient-to-r from-blue-700 to-blue-900 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/20 rounded-lg p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7C5 4 4 5 4 7zm0 5h16M9 4v16"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Customer Database</h1>
+                    <p class="text-blue-200 text-xs">Search by phone, name, email, order #, or draft #</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span id="customer-count" class="bg-white/20 text-sm px-3 py-1 rounded-full">0 customers</span>
+                <button onclick="showView('add-customer')" class="bg-white text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 transition text-sm">+ New Customer</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search Bar -->
+    <div class="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input
+                    type="text"
+                    id="global-search"
+                    placeholder="Search customers by phone number, name, email, order #, or draft #..."
+                    class="w-full pl-10 pr-20 py-3 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+                    oninput="handleSearch(this.value)"
+                    onkeydown="if(event.key==='Escape'){this.value='';handleSearch('');}"
+                >
+                <div id="search-result-count" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- Customer List View (default) -->
+        <div id="view-list" class="fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-gray-800">All Customers</h2>
+                <div class="flex items-center space-x-2">
+                    <select id="sort-select" onchange="renderCustomerList()" class="text-sm border rounded-lg px-3 py-2 bg-white">
+                        <option value="name-asc">Name A-Z</option>
+                        <option value="name-desc">Name Z-A</option>
+                        <option value="recent">Recently Updated</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="most-interactions">Most Interactions</option>
+                    </select>
+                </div>
+            </div>
+            <div id="customer-list" class="space-y-2"></div>
+            <div id="empty-state" class="hidden text-center py-16">
+                <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <h3 class="text-gray-500 font-medium text-lg">No customers yet</h3>
+                <p class="text-gray-400 text-sm mt-1">Add your first customer to get started</p>
+                <button onclick="showView('add-customer')" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">+ Add Customer</button>
+            </div>
+            <div id="no-results" class="hidden text-center py-16">
+                <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <h3 class="text-gray-500 font-medium text-lg">No results found</h3>
+                <p class="text-gray-400 text-sm mt-1">Try a different search term</p>
+            </div>
+        </div>
+
+        <!-- Customer Detail View -->
+        <div id="view-detail" class="hidden fade-in">
+            <button onclick="showView('list')" class="mb-4 flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                Back to All Customers
+            </button>
+            <div id="detail-content"></div>
+        </div>
+
+        <!-- Add/Edit Customer View -->
+        <div id="view-add-customer" class="hidden fade-in">
+            <button onclick="showView('list')" class="mb-4 flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                Back to All Customers
+            </button>
+            <div class="bg-white rounded-xl shadow-sm border max-w-2xl">
+                <div class="p-6 border-b">
+                    <h2 id="form-title" class="text-lg font-bold text-gray-800">Add New Customer</h2>
+                </div>
+                <div class="p-6 space-y-4">
+                    <input type="hidden" id="edit-customer-id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                            <input type="text" id="cust-first" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm" placeholder="John">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                            <input type="text" id="cust-last" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm" placeholder="Smith">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                        <input type="text" id="cust-company" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm" placeholder="Acme Corp">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
+                            <input type="tel" id="cust-phone" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm" placeholder="(555) 123-4567">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="cust-email" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm" placeholder="john@example.com">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                        <input type="text" id="cust-address" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm" placeholder="123 Main St, City, State ZIP">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                        <textarea id="cust-notes" rows="3" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm" placeholder="Any notes about this customer..."></textarea>
+                    </div>
+                    <div class="flex space-x-3 pt-4">
+                        <button onclick="saveCustomer()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">Save Customer</button>
+                        <button onclick="showView('list')" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Interaction Modal -->
+    <div id="interaction-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-4">Add Interaction</h3>
+            <input type="hidden" id="interaction-customer-id">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                    <select id="int-type" onchange="toggleInteractionFields()" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500">
+                        <option value="call">Phone Call</option>
+                        <option value="order">Order</option>
+                        <option value="draft">Draft</option>
+                        <option value="email">Email</option>
+                        <option value="note">Note</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+                    <input type="datetime-local" id="int-date" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500">
+                </div>
+                <div id="field-direction">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Direction</label>
+                    <select id="int-direction" class="w-full px-3 py-2 border rounded-lg text-sm">
+                        <option value="inbound">Inbound</option>
+                        <option value="outbound">Outbound</option>
+                    </select>
+                </div>
+                <div id="field-duration">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                    <input type="text" id="int-duration" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 5:24">
+                </div>
+                <div id="field-order-number" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Order Number *</label>
+                    <input type="text" id="int-order-number" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="ORD-10001">
+                </div>
+                <div id="field-draft-number" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Draft Number *</label>
+                    <input type="text" id="int-draft-number" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="DRF-5001">
+                </div>
+                <div id="field-amount" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount ($)</label>
+                    <input type="number" step="0.01" id="int-amount" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="0.00">
+                </div>
+                <div id="field-status" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select id="int-status" class="w-full px-3 py-2 border rounded-lg text-sm">
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Subject / Summary</label>
+                    <input type="text" id="int-subject" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Brief description">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Details</label>
+                    <textarea id="int-details" rows="3" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Full details of the interaction..."></textarea>
+                </div>
+                <div class="flex space-x-3 pt-2">
+                    <button onclick="saveInteraction()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">Save</button>
+                    <button onclick="closeInteractionModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export/Import Modal -->
+    <div id="export-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4">
+            <h3 class="text-lg font-bold mb-4">Export / Import Data</h3>
+            <div class="space-y-4">
+                <button onclick="exportData()" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition text-sm font-medium">Export All Data (JSON)</button>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Import Data (JSON)</label>
+                    <input type="file" id="import-file" accept=".json" class="w-full text-sm border rounded-lg p-2" onchange="importData(event)">
+                </div>
+                <button onclick="closeExportModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium">Close</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// =============================================================
+//  CUSTOMER DATABASE ENGINE
+//  Each customer is a "file" stored in localStorage with all
+//  their interactions. Search across phone, name, email,
+//  order numbers, and draft numbers.
+// =============================================================
+
+const DB_KEY = 'callrail_customer_db';
+const DB_VERSION_KEY = 'callrail_db_version';
+const DB_VERSION = 1;
+
+// ---- Data Access Layer ----
+
+function loadDatabase() {
+    try {
+        const raw = localStorage.getItem(DB_KEY);
+        if (!raw) return {};
+        return JSON.parse(raw);
+    } catch (e) {
+        console.error('Failed to load database:', e);
+        return {};
+    }
+}
+
+function saveDatabase(db) {
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+    localStorage.setItem(DB_VERSION_KEY, DB_VERSION.toString());
+    updateCustomerCount();
+}
+
+function getCustomer(id) {
+    const db = loadDatabase();
+    return db[id] || null;
+}
+
+function saveCustomerRecord(customer) {
+    const db = loadDatabase();
+    db[customer.id] = customer;
+    saveDatabase(db);
+}
+
+function deleteCustomerRecord(id) {
+    const db = loadDatabase();
+    delete db[id];
+    saveDatabase(db);
+}
+
+function getAllCustomers() {
+    const db = loadDatabase();
+    return Object.values(db);
+}
+
+function generateId() {
+    return 'cust_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+function generateInteractionId() {
+    return 'int_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// ---- Search Engine ----
+
+function normalizePhone(phone) {
+    return (phone || '').replace(/[^0-9]/g, '');
+}
+
+function searchCustomers(query) {
+    if (!query || !query.trim()) return getAllCustomers();
+
+    const q = query.trim().toLowerCase();
+    const qPhone = normalizePhone(q);
+    const customers = getAllCustomers();
+    const results = [];
+
+    for (const cust of customers) {
+        let score = 0;
+        let matched = false;
+
+        // Name match
+        const fullName = (cust.firstName + ' ' + cust.lastName).toLowerCase();
+        if (fullName.includes(q)) { matched = true; score += 10; }
+        if (cust.firstName.toLowerCase().startsWith(q) || cust.lastName.toLowerCase().startsWith(q)) score += 5;
+
+        // Company match
+        if (cust.company && cust.company.toLowerCase().includes(q)) { matched = true; score += 8; }
+
+        // Email match
+        if (cust.email && cust.email.toLowerCase().includes(q)) { matched = true; score += 9; }
+
+        // Phone match
+        if (qPhone.length >= 3 && normalizePhone(cust.phone).includes(qPhone)) { matched = true; score += 10; }
+
+        // Search interactions: order numbers, draft numbers, subjects
+        if (cust.interactions) {
+            for (const inter of cust.interactions) {
+                if (inter.orderNumber && inter.orderNumber.toLowerCase().includes(q)) { matched = true; score += 12; }
+                if (inter.draftNumber && inter.draftNumber.toLowerCase().includes(q)) { matched = true; score += 12; }
+                if (inter.subject && inter.subject.toLowerCase().includes(q)) { matched = true; score += 3; }
+            }
+        }
+
+        // Address match
+        if (cust.address && cust.address.toLowerCase().includes(q)) { matched = true; score += 4; }
+
+        if (matched) {
+            results.push({ customer: cust, score });
+        }
+    }
+
+    results.sort((a, b) => b.score - a.score);
+    return results.map(r => r.customer);
+}
+
+// ---- View Management ----
+
+let currentView = 'list';
+let currentSearchQuery = '';
+let currentDetailId = null;
+
+function showView(view) {
+    document.getElementById('view-list').classList.add('hidden');
+    document.getElementById('view-detail').classList.add('hidden');
+    document.getElementById('view-add-customer').classList.add('hidden');
+
+    if (view === 'list') {
+        document.getElementById('view-list').classList.remove('hidden');
+        renderCustomerList();
+    } else if (view === 'detail') {
+        document.getElementById('view-detail').classList.remove('hidden');
+    } else if (view === 'add-customer') {
+        document.getElementById('view-add-customer').classList.remove('hidden');
+        document.getElementById('form-title').textContent = 'Add New Customer';
+        document.getElementById('edit-customer-id').value = '';
+        clearCustomerForm();
+    } else if (view === 'edit-customer') {
+        document.getElementById('view-add-customer').classList.remove('hidden');
+        document.getElementById('form-title').textContent = 'Edit Customer';
+    }
+
+    currentView = view;
+}
+
+// ---- Customer List Rendering ----
+
+function renderCustomerList() {
+    const customers = currentSearchQuery ? searchCustomers(currentSearchQuery) : getAllCustomers();
+    const sorted = sortCustomers(customers);
+    const listEl = document.getElementById('customer-list');
+    const emptyEl = document.getElementById('empty-state');
+    const noResultsEl = document.getElementById('no-results');
+    const searchCountEl = document.getElementById('search-result-count');
+
+    listEl.innerHTML = '';
+    emptyEl.classList.add('hidden');
+    noResultsEl.classList.add('hidden');
+
+    if (currentSearchQuery) {
+        searchCountEl.textContent = sorted.length + ' result' + (sorted.length !== 1 ? 's' : '');
+        searchCountEl.classList.remove('hidden');
+    } else {
+        searchCountEl.classList.add('hidden');
+    }
+
+    if (sorted.length === 0 && !currentSearchQuery) {
+        emptyEl.classList.remove('hidden');
+        return;
+    }
+    if (sorted.length === 0 && currentSearchQuery) {
+        noResultsEl.classList.remove('hidden');
+        return;
+    }
+
+    for (const cust of sorted) {
+        const interCount = (cust.interactions || []).length;
+        const lastInteraction = getLastInteraction(cust);
+        const initials = (cust.firstName[0] || '') + (cust.lastName[0] || '');
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-lg shadow-sm border hover:shadow-md transition cursor-pointer p-4 flex items-center justify-between';
+        card.onclick = () => openCustomerDetail(cust.id);
+
+        card.innerHTML = `
+            <div class="flex items-center space-x-4 min-w-0 flex-1">
+                <div class="w-11 h-11 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                    ${initials.toUpperCase()}
+                </div>
+                <div class="min-w-0">
+                    <div class="font-semibold text-gray-900 truncate">${escapeHtml(cust.firstName + ' ' + cust.lastName)}</div>
+                    <div class="text-sm text-gray-500 truncate">
+                        ${cust.company ? escapeHtml(cust.company) + ' &middot; ' : ''}${escapeHtml(cust.phone)}${cust.email ? ' &middot; ' + escapeHtml(cust.email) : ''}
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4 flex-shrink-0 ml-4">
+                <div class="text-right hidden sm:block">
+                    <div class="text-xs text-gray-400">${interCount} interaction${interCount !== 1 ? 's' : ''}</div>
+                    ${lastInteraction ? '<div class="text-xs text-gray-400">' + formatDate(lastInteraction.date) + '</div>' : ''}
+                </div>
+                <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </div>
+        `;
+        listEl.appendChild(card);
+    }
+}
+
+function sortCustomers(customers) {
+    const sortBy = document.getElementById('sort-select').value;
+    const arr = [...customers];
+    switch (sortBy) {
+        case 'name-asc':
+            arr.sort((a, b) => (a.firstName + a.lastName).localeCompare(b.firstName + b.lastName));
+            break;
+        case 'name-desc':
+            arr.sort((a, b) => (b.firstName + b.lastName).localeCompare(a.firstName + a.lastName));
+            break;
+        case 'recent':
+            arr.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+            break;
+        case 'oldest':
+            arr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+            break;
+        case 'most-interactions':
+            arr.sort((a, b) => (b.interactions || []).length - (a.interactions || []).length);
+            break;
+    }
+    return arr;
+}
+
+function getLastInteraction(cust) {
+    if (!cust.interactions || cust.interactions.length === 0) return null;
+    const sorted = [...cust.interactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+    return sorted[0];
+}
+
+// ---- Customer Detail ----
+
+function openCustomerDetail(id) {
+    const cust = getCustomer(id);
+    if (!cust) return;
+    currentDetailId = id;
+
+    const interactions = (cust.interactions || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+    const initials = (cust.firstName[0] || '') + (cust.lastName[0] || '');
+
+    // Compute stats
+    const totalCalls = interactions.filter(i => i.type === 'call').length;
+    const totalOrders = interactions.filter(i => i.type === 'order').length;
+    const totalDrafts = interactions.filter(i => i.type === 'draft').length;
+    const totalEmails = interactions.filter(i => i.type === 'email').length;
+    const totalValue = interactions.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0);
+
+    let html = `
+        <div class="bg-white rounded-xl shadow-sm border mb-6">
+            <div class="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-14 h-14 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg flex-shrink-0">
+                        ${initials.toUpperCase()}
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">${escapeHtml(cust.firstName + ' ' + cust.lastName)}</h2>
+                        ${cust.company ? '<p class="text-gray-500 text-sm">' + escapeHtml(cust.company) + '</p>' : ''}
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="openAddInteraction('${cust.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">+ Add Interaction</button>
+                    <button onclick="editCustomer('${cust.id}')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium">Edit</button>
+                    <button onclick="confirmDeleteCustomer('${cust.id}')" class="bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 transition text-sm font-medium">Delete</button>
+                </div>
+            </div>
+            <!-- Contact Info -->
+            <div class="px-6 pb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Phone</div>
+                    <div class="text-sm font-medium">${escapeHtml(cust.phone)}</div>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Email</div>
+                    <div class="text-sm font-medium">${cust.email ? escapeHtml(cust.email) : '<span class="text-gray-300">Not set</span>'}</div>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Address</div>
+                    <div class="text-sm font-medium">${cust.address ? escapeHtml(cust.address) : '<span class="text-gray-300">Not set</span>'}</div>
+                </div>
+            </div>
+            ${cust.notes ? '<div class="px-6 pb-6"><div class="bg-yellow-50 border border-yellow-100 rounded-lg p-3"><div class="text-xs text-yellow-600 uppercase tracking-wide mb-1">Notes</div><div class="text-sm text-gray-700">' + escapeHtml(cust.notes) + '</div></div></div>' : ''}
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+            <div class="bg-white rounded-lg shadow-sm border p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600">${totalCalls}</div>
+                <div class="text-xs text-gray-500 mt-1">Calls</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border p-4 text-center">
+                <div class="text-2xl font-bold text-green-600">${totalOrders}</div>
+                <div class="text-xs text-gray-500 mt-1">Orders</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border p-4 text-center">
+                <div class="text-2xl font-bold text-yellow-600">${totalDrafts}</div>
+                <div class="text-xs text-gray-500 mt-1">Drafts</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border p-4 text-center">
+                <div class="text-2xl font-bold text-purple-600">${totalEmails}</div>
+                <div class="text-xs text-gray-500 mt-1">Emails</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border p-4 text-center">
+                <div class="text-2xl font-bold text-gray-800">$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div class="text-xs text-gray-500 mt-1">Total Value</div>
+            </div>
+        </div>
+
+        <!-- Interaction Timeline -->
+        <div class="bg-white rounded-xl shadow-sm border">
+            <div class="p-6 border-b flex items-center justify-between">
+                <h3 class="font-bold text-gray-800">Interaction History</h3>
+                <span class="text-sm text-gray-400">${interactions.length} total</span>
+            </div>
+    `;
+
+    if (interactions.length === 0) {
+        html += `
+            <div class="p-12 text-center">
+                <p class="text-gray-400">No interactions recorded yet.</p>
+                <button onclick="openAddInteraction('${cust.id}')" class="mt-3 text-blue-600 hover:text-blue-800 text-sm font-medium">+ Add the first interaction</button>
+            </div>
+        `;
+    } else {
+        html += '<div class="p-6 relative interaction-timeline space-y-6">';
+        for (const inter of interactions) {
+            const badge = getBadgeClass(inter.type);
+            const icon = getTypeIcon(inter.type);
+            html += `
+                <div class="flex items-start space-x-4 relative z-10">
+                    <div class="w-10 h-10 rounded-full ${badge} flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                        ${icon}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold ${badge}">${capitalize(inter.type)}</span>
+                                ${inter.direction ? '<span class="text-xs text-gray-400 ml-1">' + capitalize(inter.direction) + '</span>' : ''}
+                                ${inter.duration ? '<span class="text-xs text-gray-400 ml-1">' + escapeHtml(inter.duration) + '</span>' : ''}
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs text-gray-400 whitespace-nowrap">${formatDate(inter.date)}</span>
+                                <button onclick="deleteInteraction('${cust.id}', '${inter.id}')" class="text-gray-300 hover:text-red-500 transition" title="Delete">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        ${inter.orderNumber ? '<div class="text-sm mt-1"><span class="font-medium text-gray-600">Order #:</span> ' + escapeHtml(inter.orderNumber) + '</div>' : ''}
+                        ${inter.draftNumber ? '<div class="text-sm mt-1"><span class="font-medium text-gray-600">Draft #:</span> ' + escapeHtml(inter.draftNumber) + '</div>' : ''}
+                        ${inter.amount ? '<div class="text-sm mt-1"><span class="font-medium text-gray-600">Amount:</span> $' + parseFloat(inter.amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</div>' : ''}
+                        ${inter.status ? '<div class="text-sm mt-1"><span class="font-medium text-gray-600">Status:</span> <span class="capitalize">' + escapeHtml(inter.status) + '</span></div>' : ''}
+                        ${inter.subject ? '<div class="text-sm font-medium text-gray-800 mt-1">' + escapeHtml(inter.subject) + '</div>' : ''}
+                        ${inter.details ? '<div class="text-sm text-gray-600 mt-1">' + escapeHtml(inter.details) + '</div>' : ''}
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+    }
+
+    html += '</div>';
+
+    document.getElementById('detail-content').innerHTML = html;
+    showView('detail');
+}
+
+// ---- CRUD Operations ----
+
+function saveCustomer() {
+    const id = document.getElementById('edit-customer-id').value;
+    const firstName = document.getElementById('cust-first').value.trim();
+    const lastName = document.getElementById('cust-last').value.trim();
+    const company = document.getElementById('cust-company').value.trim();
+    const phone = document.getElementById('cust-phone').value.trim();
+    const email = document.getElementById('cust-email').value.trim();
+    const address = document.getElementById('cust-address').value.trim();
+    const notes = document.getElementById('cust-notes').value.trim();
+
+    if (!firstName || !lastName || !phone) {
+        alert('First name, last name, and phone are required.');
+        return;
+    }
+
+    const now = new Date().toISOString();
+
+    if (id) {
+        // Editing existing customer
+        const existing = getCustomer(id);
+        if (!existing) return;
+        existing.firstName = firstName;
+        existing.lastName = lastName;
+        existing.company = company;
+        existing.phone = phone;
+        existing.email = email;
+        existing.address = address;
+        existing.notes = notes;
+        existing.updatedAt = now;
+        saveCustomerRecord(existing);
+        openCustomerDetail(id);
+    } else {
+        // New customer
+        const customer = {
+            id: generateId(),
+            firstName,
+            lastName,
+            company,
+            phone,
+            email,
+            address,
+            notes,
+            interactions: [],
+            createdAt: now,
+            updatedAt: now
+        };
+        saveCustomerRecord(customer);
+        showView('list');
+    }
+}
+
+function editCustomer(id) {
+    const cust = getCustomer(id);
+    if (!cust) return;
+    document.getElementById('edit-customer-id').value = cust.id;
+    document.getElementById('cust-first').value = cust.firstName;
+    document.getElementById('cust-last').value = cust.lastName;
+    document.getElementById('cust-company').value = cust.company || '';
+    document.getElementById('cust-phone').value = cust.phone;
+    document.getElementById('cust-email').value = cust.email || '';
+    document.getElementById('cust-address').value = cust.address || '';
+    document.getElementById('cust-notes').value = cust.notes || '';
+    showView('edit-customer');
+}
+
+function confirmDeleteCustomer(id) {
+    const cust = getCustomer(id);
+    if (!cust) return;
+    if (confirm('Delete customer "' + cust.firstName + ' ' + cust.lastName + '" and all their interactions? This cannot be undone.')) {
+        deleteCustomerRecord(id);
+        showView('list');
+    }
+}
+
+function clearCustomerForm() {
+    document.getElementById('cust-first').value = '';
+    document.getElementById('cust-last').value = '';
+    document.getElementById('cust-company').value = '';
+    document.getElementById('cust-phone').value = '';
+    document.getElementById('cust-email').value = '';
+    document.getElementById('cust-address').value = '';
+    document.getElementById('cust-notes').value = '';
+}
+
+// ---- Interactions ----
+
+function openAddInteraction(customerId) {
+    document.getElementById('interaction-customer-id').value = customerId;
+    document.getElementById('int-type').value = 'call';
+    document.getElementById('int-date').value = new Date().toISOString().slice(0, 16);
+    document.getElementById('int-direction').value = 'inbound';
+    document.getElementById('int-duration').value = '';
+    document.getElementById('int-order-number').value = '';
+    document.getElementById('int-draft-number').value = '';
+    document.getElementById('int-amount').value = '';
+    document.getElementById('int-status').value = 'pending';
+    document.getElementById('int-subject').value = '';
+    document.getElementById('int-details').value = '';
+    toggleInteractionFields();
+    document.getElementById('interaction-modal').classList.remove('hidden');
+    document.getElementById('interaction-modal').classList.add('flex');
+}
+
+function closeInteractionModal() {
+    document.getElementById('interaction-modal').classList.add('hidden');
+    document.getElementById('interaction-modal').classList.remove('flex');
+}
+
+function toggleInteractionFields() {
+    const type = document.getElementById('int-type').value;
+    document.getElementById('field-direction').classList.toggle('hidden', type !== 'call');
+    document.getElementById('field-duration').classList.toggle('hidden', type !== 'call');
+    document.getElementById('field-order-number').classList.toggle('hidden', type !== 'order');
+    document.getElementById('field-draft-number').classList.toggle('hidden', type !== 'draft');
+    document.getElementById('field-amount').classList.toggle('hidden', type !== 'order' && type !== 'draft');
+    document.getElementById('field-status').classList.toggle('hidden', type !== 'order' && type !== 'draft');
+}
+
+function saveInteraction() {
+    const customerId = document.getElementById('interaction-customer-id').value;
+    const type = document.getElementById('int-type').value;
+    const date = document.getElementById('int-date').value;
+    const subject = document.getElementById('int-subject').value.trim();
+    const details = document.getElementById('int-details').value.trim();
+
+    if (!date) { alert('Date is required.'); return; }
+
+    const interaction = {
+        id: generateInteractionId(),
+        type,
+        date,
+        subject,
+        details
+    };
+
+    if (type === 'call') {
+        interaction.direction = document.getElementById('int-direction').value;
+        interaction.duration = document.getElementById('int-duration').value.trim();
+    }
+    if (type === 'order') {
+        interaction.orderNumber = document.getElementById('int-order-number').value.trim();
+        if (!interaction.orderNumber) { alert('Order number is required.'); return; }
+        interaction.amount = document.getElementById('int-amount').value;
+        interaction.status = document.getElementById('int-status').value;
+    }
+    if (type === 'draft') {
+        interaction.draftNumber = document.getElementById('int-draft-number').value.trim();
+        if (!interaction.draftNumber) { alert('Draft number is required.'); return; }
+        interaction.amount = document.getElementById('int-amount').value;
+        interaction.status = document.getElementById('int-status').value;
+    }
+
+    const cust = getCustomer(customerId);
+    if (!cust) return;
+    if (!cust.interactions) cust.interactions = [];
+    cust.interactions.push(interaction);
+    cust.updatedAt = new Date().toISOString();
+    saveCustomerRecord(cust);
+
+    closeInteractionModal();
+    openCustomerDetail(customerId);
+}
+
+function deleteInteraction(customerId, interactionId) {
+    if (!confirm('Delete this interaction?')) return;
+    const cust = getCustomer(customerId);
+    if (!cust) return;
+    cust.interactions = (cust.interactions || []).filter(i => i.id !== interactionId);
+    cust.updatedAt = new Date().toISOString();
+    saveCustomerRecord(cust);
+    openCustomerDetail(customerId);
+}
+
+// ---- Search Handler ----
+
+let searchDebounce = null;
+
+function handleSearch(value) {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+        currentSearchQuery = value.trim();
+        if (currentView !== 'list') showView('list');
+        else renderCustomerList();
+    }, 150);
+}
+
+// ---- Export / Import ----
+
+function openExportModal() {
+    document.getElementById('export-modal').classList.remove('hidden');
+    document.getElementById('export-modal').classList.add('flex');
+}
+
+function closeExportModal() {
+    document.getElementById('export-modal').classList.add('hidden');
+    document.getElementById('export-modal').classList.remove('flex');
+}
+
+function exportData() {
+    const db = loadDatabase();
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'customer-database-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (typeof data !== 'object') throw new Error('Invalid data');
+            const existingDb = loadDatabase();
+            let imported = 0;
+            for (const [id, cust] of Object.entries(data)) {
+                if (cust.id && cust.firstName && cust.lastName && cust.phone) {
+                    existingDb[cust.id] = cust;
+                    imported++;
+                }
+            }
+            saveDatabase(existingDb);
+            alert('Imported ' + imported + ' customers.');
+            closeExportModal();
+            renderCustomerList();
+        } catch (err) {
+            alert('Failed to import: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+// ---- Helpers ----
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
+}
+
+function capitalize(str) {
+    return str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function getBadgeClass(type) {
+    const map = { call: 'badge-call', order: 'badge-order', draft: 'badge-draft', email: 'badge-email', note: 'badge-note' };
+    return map[type] || 'badge-note';
+}
+
+function getTypeIcon(type) {
+    const icons = {
+        call: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>',
+        order: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>',
+        draft: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>',
+        email: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>',
+        note: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>'
+    };
+    return icons[type] || icons.note;
+}
+
+function updateCustomerCount() {
+    const count = getAllCustomers().length;
+    document.getElementById('customer-count').textContent = count + ' customer' + (count !== 1 ? 's' : '');
+}
+
+// ---- Seed sample data on first load ----
+
+function seedSampleData() {
+    const db = loadDatabase();
+    if (Object.keys(db).length > 0) return;
+
+    const now = new Date().toISOString();
+    const samples = [
+        {
+            id: generateId(),
+            firstName: 'John', lastName: 'Smith', company: 'Smith Construction',
+            phone: '(555) 123-4567', email: 'john@smithconstruction.com',
+            address: '100 Main St, Austin, TX 78701', notes: 'Prefers morning calls. VIP client.',
+            interactions: [
+                { id: generateInteractionId(), type: 'call', date: '2025-08-30T10:15:00', direction: 'inbound', duration: '5:24', subject: 'Quote request for office renovation', details: 'Client needs full renovation of 3rd floor office space. Wants estimate by Friday.' },
+                { id: generateInteractionId(), type: 'order', date: '2025-08-28T14:00:00', orderNumber: 'ORD-10042', amount: 15000, status: 'confirmed', subject: 'Office renovation materials', details: 'Drywall, paint, flooring package.' },
+                { id: generateInteractionId(), type: 'draft', date: '2025-08-25T09:00:00', draftNumber: 'DRF-5010', amount: 22000, status: 'pending', subject: 'Full renovation proposal', details: 'Draft proposal including labor and materials for 3rd floor.' },
+                { id: generateInteractionId(), type: 'email', date: '2025-08-24T16:30:00', subject: 'Welcome email sent', details: 'Sent onboarding packet and pricing catalog.' },
+                { id: generateInteractionId(), type: 'note', date: '2025-08-20T11:00:00', subject: 'Initial contact', details: 'Met at trade show. Very interested in our services.' }
+            ],
+            createdAt: '2025-08-20T11:00:00', updatedAt: now
+        },
+        {
+            id: generateId(),
+            firstName: 'Sarah', lastName: 'Johnson', company: 'Johnson Real Estate',
+            phone: '(555) 987-6543', email: 'sarah@johnsonre.com',
+            address: '250 Oak Ave, Dallas, TX 75201', notes: 'Referred by John Smith.',
+            interactions: [
+                { id: generateInteractionId(), type: 'call', date: '2025-08-29T09:20:00', direction: 'inbound', duration: '2:36', subject: 'Staging supplies inquiry', details: 'Needs staging furniture for 3 properties.' },
+                { id: generateInteractionId(), type: 'order', date: '2025-08-27T11:00:00', orderNumber: 'ORD-10038', amount: 8500, status: 'shipped', subject: 'Staging furniture set', details: 'Modern furniture package for luxury condo staging.' },
+                { id: generateInteractionId(), type: 'call', date: '2025-08-22T15:00:00', direction: 'outbound', duration: '8:12', subject: 'Follow-up on catalog request', details: 'Discussed premium staging options. Sending detailed quote.' }
+            ],
+            createdAt: '2025-08-22T15:00:00', updatedAt: now
+        },
+        {
+            id: generateId(),
+            firstName: 'Mike', lastName: 'Davis', company: 'Davis & Sons Plumbing',
+            phone: '(555) 456-7890', email: 'mike@davisplumbing.net',
+            address: '88 Commerce Blvd, Houston, TX 77001', notes: '',
+            interactions: [
+                { id: generateInteractionId(), type: 'call', date: '2025-08-31T08:45:00', direction: 'inbound', duration: '3:10', subject: 'Emergency supply order', details: 'Needs pipe fittings ASAP for a commercial job.' },
+                { id: generateInteractionId(), type: 'order', date: '2025-08-31T09:30:00', orderNumber: 'ORD-10045', amount: 3200, status: 'delivered', subject: 'Pipe fittings rush order', details: '2-inch and 4-inch copper fittings. Rush delivery.' },
+                { id: generateInteractionId(), type: 'draft', date: '2025-08-29T10:00:00', draftNumber: 'DRF-5015', amount: 12500, status: 'pending', subject: 'Annual supply contract', details: 'Draft for yearly plumbing supply contract. Awaiting approval.' },
+                { id: generateInteractionId(), type: 'email', date: '2025-08-28T14:00:00', subject: 'Invoice #INV-2045 sent', details: 'Sent invoice for last month deliveries.' }
+            ],
+            createdAt: '2025-08-28T14:00:00', updatedAt: now
+        },
+        {
+            id: generateId(),
+            firstName: 'Lisa', lastName: 'Chen', company: 'Chen Interior Design',
+            phone: '(555) 222-3344', email: 'lisa@chendesign.com',
+            address: '500 Design District, San Antonio, TX 78205', notes: 'High-end residential projects only.',
+            interactions: [
+                { id: generateInteractionId(), type: 'draft', date: '2025-08-30T13:00:00', draftNumber: 'DRF-5018', amount: 45000, status: 'pending', subject: 'Luxury home furnishing package', details: 'Complete furnishing for 5-bedroom home in Alamo Heights.' },
+                { id: generateInteractionId(), type: 'call', date: '2025-08-28T11:00:00', direction: 'outbound', duration: '12:45', subject: 'Design consultation call', details: 'Discussed material options and timeline for the Henderson project.' }
+            ],
+            createdAt: '2025-08-28T11:00:00', updatedAt: now
+        },
+        {
+            id: generateId(),
+            firstName: 'Robert', lastName: 'Garcia', company: '',
+            phone: '(555) 888-9900', email: 'rgarcia@gmail.com',
+            address: '42 Elm Street, Fort Worth, TX 76102', notes: 'Residential customer. Cash buyer.',
+            interactions: [
+                { id: generateInteractionId(), type: 'order', date: '2025-08-26T16:00:00', orderNumber: 'ORD-10035', amount: 1800, status: 'delivered', subject: 'Patio furniture set', details: 'Outdoor dining set with umbrella.' },
+                { id: generateInteractionId(), type: 'note', date: '2025-08-20T09:00:00', subject: 'Walk-in customer', details: 'Came in to browse. Interested in outdoor furniture.' }
+            ],
+            createdAt: '2025-08-20T09:00:00', updatedAt: now
+        }
+    ];
+
+    const newDb = {};
+    for (const c of samples) {
+        newDb[c.id] = c;
+    }
+    saveDatabase(newDb);
+}
+
+// ---- Initialize ----
+
+document.addEventListener('DOMContentLoaded', () => {
+    seedSampleData();
+    updateCustomerCount();
+    renderCustomerList();
+});
+</script>
+
+</body>
+</html>
