@@ -247,8 +247,15 @@
     <!-- Gmail Import Modal -->
     <div id="gmail-import-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 class="text-lg font-bold mb-4">Import from Gmail Contacts</h3>
-            <div class="space-y-4">
+            <h3 class="text-lg font-bold mb-2">Import from Gmail</h3>
+            <!-- Tabs -->
+            <div class="flex border-b mb-4">
+                <button id="tab-contacts" onclick="switchGmailTab('contacts')" class="px-4 py-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600">Contacts (CSV)</button>
+                <button id="tab-emails" onclick="switchGmailTab('emails')" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">Emails (MBOX)</button>
+            </div>
+
+            <!-- Contacts Tab -->
+            <div id="gmail-tab-contacts" class="space-y-4">
                 <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-800">
                     <p class="font-semibold mb-2">How to export your Gmail contacts:</p>
                     <ol class="list-decimal ml-4 space-y-1">
@@ -272,6 +279,36 @@
                 <div id="gmail-import-stats" class="hidden text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg p-3"></div>
                 <div class="flex space-x-3">
                     <button id="gmail-import-btn" onclick="importGmailContacts()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed" disabled>Import Contacts</button>
+                    <button onclick="closeGmailImportModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium">Close</button>
+                </div>
+            </div>
+
+            <!-- Emails Tab -->
+            <div id="gmail-tab-emails" class="space-y-4 hidden">
+                <div class="bg-purple-50 border border-purple-100 rounded-lg p-4 text-sm text-purple-800">
+                    <p class="font-semibold mb-2">How to export your Gmail emails:</p>
+                    <ol class="list-decimal ml-4 space-y-1">
+                        <li>Go to <strong>takeout.google.com</strong></li>
+                        <li>Click <strong>Deselect all</strong>, then check only <strong>Mail</strong></li>
+                        <li>Click <strong>All Mail data included</strong> to pick specific labels</li>
+                        <li>Click <strong>Next step</strong>, then <strong>Create export</strong></li>
+                        <li>Download the archive and extract the <strong>.mbox</strong> file</li>
+                        <li>Upload the .mbox file below</li>
+                    </ol>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Upload Gmail .mbox file</label>
+                    <input type="file" id="mbox-import-file" accept=".mbox" class="w-full text-sm border rounded-lg p-2">
+                </div>
+                <div id="mbox-import-preview" class="hidden">
+                    <div class="border rounded-lg p-3 bg-gray-50 max-h-48 overflow-y-auto">
+                        <p class="text-sm font-medium text-gray-700 mb-2">Preview:</p>
+                        <div id="mbox-preview-list" class="text-sm text-gray-600 space-y-1"></div>
+                    </div>
+                </div>
+                <div id="mbox-import-stats" class="hidden text-sm text-purple-700 bg-purple-50 border border-purple-100 rounded-lg p-3"></div>
+                <div class="flex space-x-3">
+                    <button id="mbox-import-btn" onclick="importMboxEmails()" class="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed" disabled>Import Emails</button>
                     <button onclick="closeGmailImportModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium">Close</button>
                 </div>
             </div>
@@ -889,15 +926,14 @@ function importData(event) {
 // ---- Gmail Import ----
 
 let gmailParsedContacts = [];
+let mboxParsedEmails = [];
 
 function openGmailImportModal() {
     document.getElementById('gmail-import-modal').classList.remove('hidden');
     document.getElementById('gmail-import-modal').classList.add('flex');
-    document.getElementById('gmail-import-file').value = '';
-    document.getElementById('gmail-import-preview').classList.add('hidden');
-    document.getElementById('gmail-import-stats').classList.add('hidden');
-    document.getElementById('gmail-import-btn').disabled = true;
-    gmailParsedContacts = [];
+    switchGmailTab('contacts');
+    resetContactsTab();
+    resetEmailsTab();
 }
 
 function closeGmailImportModal() {
@@ -905,20 +941,72 @@ function closeGmailImportModal() {
     document.getElementById('gmail-import-modal').classList.remove('flex');
 }
 
+function switchGmailTab(tab) {
+    const contactsTab = document.getElementById('tab-contacts');
+    const emailsTab = document.getElementById('tab-emails');
+    const contactsPanel = document.getElementById('gmail-tab-contacts');
+    const emailsPanel = document.getElementById('gmail-tab-emails');
+
+    if (tab === 'contacts') {
+        contactsTab.classList.add('border-blue-600', 'text-blue-600');
+        contactsTab.classList.remove('border-transparent', 'text-gray-500');
+        emailsTab.classList.remove('border-purple-600', 'text-purple-600');
+        emailsTab.classList.add('border-transparent', 'text-gray-500');
+        contactsPanel.classList.remove('hidden');
+        emailsPanel.classList.add('hidden');
+    } else {
+        emailsTab.classList.add('border-purple-600', 'text-purple-600');
+        emailsTab.classList.remove('border-transparent', 'text-gray-500');
+        contactsTab.classList.remove('border-blue-600', 'text-blue-600');
+        contactsTab.classList.add('border-transparent', 'text-gray-500');
+        emailsPanel.classList.remove('hidden');
+        contactsPanel.classList.add('hidden');
+    }
+}
+
+function resetContactsTab() {
+    document.getElementById('gmail-import-file').value = '';
+    document.getElementById('gmail-import-preview').classList.add('hidden');
+    document.getElementById('gmail-import-stats').classList.add('hidden');
+    document.getElementById('gmail-import-btn').disabled = true;
+    gmailParsedContacts = [];
+}
+
+function resetEmailsTab() {
+    document.getElementById('mbox-import-file').value = '';
+    document.getElementById('mbox-import-preview').classList.add('hidden');
+    document.getElementById('mbox-import-stats').classList.add('hidden');
+    document.getElementById('mbox-import-btn').disabled = true;
+    mboxParsedEmails = [];
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    const fileInput = document.getElementById('gmail-import-file');
-    if (fileInput) {
-        fileInput.addEventListener('change', function(e) {
+    // Contacts CSV file handler
+    const csvInput = document.getElementById('gmail-import-file');
+    if (csvInput) {
+        csvInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(ev) {
-                parseGmailCSV(ev.target.result);
-            };
+            reader.onload = function(ev) { parseGmailCSV(ev.target.result); };
+            reader.readAsText(file);
+        });
+    }
+
+    // MBOX file handler
+    const mboxInput = document.getElementById('mbox-import-file');
+    if (mboxInput) {
+        mboxInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) { parseMboxFile(ev.target.result); };
             reader.readAsText(file);
         });
     }
 });
+
+// ---- CSV Contacts Parser ----
 
 function parseCSVLine(line) {
     const values = [];
@@ -952,14 +1040,10 @@ function parseCSVLine(line) {
 
 function parseGmailCSV(csvText) {
     const lines = csvText.split(/\r?\n/).filter(l => l.trim());
-    if (lines.length < 2) {
-        alert('CSV file appears to be empty.');
-        return;
-    }
+    if (lines.length < 2) { alert('CSV file appears to be empty.'); return; }
 
     const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
 
-    // Google Contacts CSV column mapping
     const firstIdx = headers.indexOf('first name');
     const lastIdx = headers.indexOf('last name');
     const nameIdx = headers.indexOf('name');
@@ -986,8 +1070,6 @@ function parseGmailCSV(csvText) {
 
         let firstName = (firstIdx !== -1 ? vals[firstIdx] : '') || '';
         let lastName = (lastIdx !== -1 ? vals[lastIdx] : '') || '';
-
-        // Fall back to "Name" column if first/last not found
         if (!firstName && !lastName && nameIdx !== -1 && vals[nameIdx]) {
             const parts = vals[nameIdx].split(' ');
             firstName = parts[0] || '';
@@ -1000,10 +1082,8 @@ function parseGmailCSV(csvText) {
         const address = (addressIdx !== -1 ? vals[addressIdx] : '') || '';
         const notes = (notesIdx !== -1 ? vals[notesIdx] : '') || '';
 
-        // Skip rows with no useful data
         if (!firstName && !lastName && !email && !phone) continue;
 
-        // Check for duplicates by email or phone
         const isDuplicate = existing.some(c =>
             (email && c.email && c.email.toLowerCase() === email.toLowerCase()) ||
             (phone && normalizePhone(c.phone) === normalizePhone(phone))
@@ -1012,25 +1092,20 @@ function parseGmailCSV(csvText) {
         gmailParsedContacts.push({
             firstName: firstName || '(No first name)',
             lastName: lastName || '(No last name)',
-            email, phone, company, address, notes,
-            isDuplicate
+            email, phone, company, address, notes, isDuplicate
         });
     }
 
-    // Show preview
     const previewEl = document.getElementById('gmail-preview-list');
     const previewContainer = document.getElementById('gmail-import-preview');
     const newContacts = gmailParsedContacts.filter(c => !c.isDuplicate);
     const dupes = gmailParsedContacts.filter(c => c.isDuplicate);
 
     previewEl.innerHTML = '';
-    const showCount = Math.min(newContacts.length, 10);
-    for (let i = 0; i < showCount; i++) {
+    for (let i = 0; i < Math.min(newContacts.length, 10); i++) {
         const c = newContacts[i];
         const div = document.createElement('div');
-        div.textContent = c.firstName + ' ' + c.lastName +
-            (c.email ? ' - ' + c.email : '') +
-            (c.phone ? ' - ' + c.phone : '');
+        div.textContent = c.firstName + ' ' + c.lastName + (c.email ? ' - ' + c.email : '') + (c.phone ? ' - ' + c.phone : '');
         previewEl.appendChild(div);
     }
     if (newContacts.length > 10) {
@@ -1045,41 +1120,238 @@ function parseGmailCSV(csvText) {
         (dupes.length > 0 ? ' <span class="text-yellow-700">' + dupes.length + ' duplicate' + (dupes.length !== 1 ? 's' : '') + ' will be skipped.</span>' : '');
     statsEl.classList.remove('hidden');
     previewContainer.classList.remove('hidden');
-
     document.getElementById('gmail-import-btn').disabled = newContacts.length === 0;
 }
 
 function importGmailContacts() {
     const newContacts = gmailParsedContacts.filter(c => !c.isDuplicate);
-    if (newContacts.length === 0) {
-        alert('No new contacts to import.');
-        return;
-    }
+    if (newContacts.length === 0) { alert('No new contacts to import.'); return; }
 
     const now = new Date().toISOString();
     const db = loadDatabase();
-
     for (const c of newContacts) {
-        const customer = {
-            id: generateId(),
-            firstName: c.firstName,
-            lastName: c.lastName,
-            company: c.company,
-            phone: c.phone,
-            email: c.email,
-            address: c.address,
-            notes: c.notes ? c.notes : 'Imported from Gmail',
-            interactions: [],
-            createdAt: now,
-            updatedAt: now
+        db[generateId()] = {
+            id: generateId(), firstName: c.firstName, lastName: c.lastName,
+            company: c.company, phone: c.phone, email: c.email,
+            address: c.address, notes: c.notes || 'Imported from Gmail',
+            interactions: [], createdAt: now, updatedAt: now
         };
-        db[customer.id] = customer;
+    }
+    saveDatabase(db);
+    alert('Imported ' + newContacts.length + ' contact' + (newContacts.length !== 1 ? 's' : '') + '!');
+    closeGmailImportModal();
+    renderCustomerList();
+}
+
+// ---- MBOX Email Parser ----
+
+function extractEmailAddress(headerValue) {
+    if (!headerValue) return '';
+    const match = headerValue.match(/<([^>]+)>/);
+    if (match) return match[1].toLowerCase().trim();
+    if (headerValue.includes('@')) return headerValue.toLowerCase().trim();
+    return '';
+}
+
+function extractSenderName(headerValue) {
+    if (!headerValue) return '';
+    const match = headerValue.match(/^"?([^"<]+)"?\s*</);
+    if (match) return match[1].trim();
+    return '';
+}
+
+function decodeQuotedPrintable(str) {
+    return str
+        .replace(/=\r?\n/g, '')
+        .replace(/=([0-9A-Fa-f]{2})/g, function(_, hex) {
+            return String.fromCharCode(parseInt(hex, 16));
+        });
+}
+
+function decodeBase64(str) {
+    try { return atob(str.replace(/\s/g, '')); } catch (e) { return str; }
+}
+
+function parseMboxFile(text) {
+    // Split into individual messages at "From " lines
+    const rawMessages = text.split(/^From /m);
+    mboxParsedEmails = [];
+    const customers = getAllCustomers();
+
+    for (let i = 1; i < rawMessages.length; i++) {
+        const msg = rawMessages[i];
+        // Split headers from body at first blank line
+        const blankLineIdx = msg.search(/\r?\n\r?\n/);
+        if (blankLineIdx === -1) continue;
+
+        const headerBlock = msg.substring(0, blankLineIdx);
+        let bodyRaw = msg.substring(blankLineIdx).replace(/^\r?\n\r?\n/, '');
+
+        // Parse headers (handle continuation lines)
+        const headerLines = headerBlock.replace(/\r?\n[ \t]+/g, ' ').split(/\r?\n/);
+        const headers = {};
+        for (const line of headerLines) {
+            const colonIdx = line.indexOf(':');
+            if (colonIdx === -1) continue;
+            const key = line.substring(0, colonIdx).toLowerCase().trim();
+            const val = line.substring(colonIdx + 1).trim();
+            headers[key] = val;
+        }
+
+        const from = headers['from'] || '';
+        const to = headers['to'] || '';
+        const subject = headers['subject'] || '(No subject)';
+        const dateStr = headers['date'] || '';
+        const contentType = (headers['content-type'] || '').toLowerCase();
+        const encoding = (headers['content-transfer-encoding'] || '').toLowerCase();
+
+        const fromEmail = extractEmailAddress(from);
+        const fromName = extractSenderName(from);
+        const toEmail = extractEmailAddress(to);
+
+        // Decode body based on transfer encoding
+        let body = bodyRaw;
+        if (contentType.includes('multipart/')) {
+            // Extract text/plain part from multipart
+            const boundaryMatch = contentType.match(/boundary="?([^";\s]+)"?/);
+            if (boundaryMatch) {
+                const boundary = boundaryMatch[1];
+                const parts = body.split('--' + boundary);
+                for (const part of parts) {
+                    const partLower = part.toLowerCase();
+                    if (partLower.includes('content-type: text/plain') || (partLower.includes('content-type:') && partLower.includes('text/plain'))) {
+                        const partBodyStart = part.search(/\r?\n\r?\n/);
+                        if (partBodyStart !== -1) {
+                            let partBody = part.substring(partBodyStart).trim();
+                            if (partLower.includes('quoted-printable')) {
+                                partBody = decodeQuotedPrintable(partBody);
+                            } else if (partLower.includes('base64')) {
+                                partBody = decodeBase64(partBody);
+                            }
+                            body = partBody;
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            if (encoding === 'quoted-printable') {
+                body = decodeQuotedPrintable(body);
+            } else if (encoding === 'base64') {
+                body = decodeBase64(body);
+            }
+        }
+
+        // Clean up body: trim, limit length
+        body = body.replace(/\r\n/g, '\n').trim();
+        if (body.length > 2000) body = body.substring(0, 2000) + '\n... (truncated)';
+
+        // Parse date
+        let parsedDate = '';
+        if (dateStr) {
+            try {
+                const d = new Date(dateStr);
+                if (!isNaN(d.getTime())) parsedDate = d.toISOString().slice(0, 16);
+            } catch (e) {}
+        }
+
+        // Determine direction and match to customer
+        let matchedCustomer = null;
+        let direction = 'inbound';
+
+        // Try matching "from" email to a customer (inbound email)
+        if (fromEmail) {
+            matchedCustomer = customers.find(c => c.email && c.email.toLowerCase() === fromEmail);
+        }
+        // Try matching "to" email to a customer (outbound email)
+        if (!matchedCustomer && toEmail) {
+            matchedCustomer = customers.find(c => c.email && c.email.toLowerCase() === toEmail);
+            if (matchedCustomer) direction = 'outbound';
+        }
+
+        mboxParsedEmails.push({
+            from: from,
+            fromEmail,
+            fromName,
+            to: to,
+            toEmail,
+            subject,
+            date: parsedDate,
+            body,
+            direction,
+            matchedCustomerId: matchedCustomer ? matchedCustomer.id : null,
+            matchedCustomerName: matchedCustomer ? (matchedCustomer.firstName + ' ' + matchedCustomer.lastName) : null
+        });
+    }
+
+    // Show preview
+    const previewEl = document.getElementById('mbox-preview-list');
+    const previewContainer = document.getElementById('mbox-import-preview');
+    const matched = mboxParsedEmails.filter(e => e.matchedCustomerId);
+    const unmatched = mboxParsedEmails.filter(e => !e.matchedCustomerId);
+
+    previewEl.innerHTML = '';
+    for (let i = 0; i < Math.min(matched.length, 8); i++) {
+        const e = matched[i];
+        const div = document.createElement('div');
+        div.className = 'py-1 border-b border-gray-200 last:border-0';
+        div.innerHTML = '<span class="font-medium">' + escapeHtml(e.subject) + '</span>' +
+            '<br><span class="text-xs text-gray-400">' + escapeHtml(e.direction === 'inbound' ? 'From' : 'To') + ': ' +
+            escapeHtml(e.matchedCustomerName) + ' &middot; ' + (e.date ? formatDate(e.date) : 'No date') + '</span>' +
+            '<br><span class="text-xs text-gray-500">' + escapeHtml(e.body.substring(0, 100)) + (e.body.length > 100 ? '...' : '') + '</span>';
+        previewEl.appendChild(div);
+    }
+    if (matched.length > 8) {
+        const more = document.createElement('div');
+        more.className = 'text-gray-400 italic pt-1';
+        more.textContent = '... and ' + (matched.length - 8) + ' more matched emails';
+        previewEl.appendChild(more);
+    }
+
+    const statsEl = document.getElementById('mbox-import-stats');
+    statsEl.innerHTML = '<strong>' + mboxParsedEmails.length + '</strong> email' + (mboxParsedEmails.length !== 1 ? 's' : '') + ' found. ' +
+        '<strong>' + matched.length + '</strong> matched to existing customers.' +
+        (unmatched.length > 0 ? '<br><span class="text-yellow-700">' + unmatched.length + ' email' + (unmatched.length !== 1 ? 's' : '') + ' had no matching customer (by email address) and will be skipped.</span>' : '');
+    statsEl.classList.remove('hidden');
+    previewContainer.classList.remove('hidden');
+    document.getElementById('mbox-import-btn').disabled = matched.length === 0;
+}
+
+function importMboxEmails() {
+    const matched = mboxParsedEmails.filter(e => e.matchedCustomerId);
+    if (matched.length === 0) { alert('No emails matched to customers.'); return; }
+
+    const db = loadDatabase();
+    let importedCount = 0;
+
+    for (const email of matched) {
+        const cust = db[email.matchedCustomerId];
+        if (!cust) continue;
+        if (!cust.interactions) cust.interactions = [];
+
+        // Check for duplicate (same subject + same date)
+        const isDupe = cust.interactions.some(i =>
+            i.type === 'email' && i.subject === email.subject && i.date === email.date
+        );
+        if (isDupe) continue;
+
+        cust.interactions.push({
+            id: generateInteractionId(),
+            type: 'email',
+            date: email.date || new Date().toISOString().slice(0, 16),
+            direction: email.direction,
+            subject: email.subject,
+            details: email.body
+        });
+        cust.updatedAt = new Date().toISOString();
+        importedCount++;
     }
 
     saveDatabase(db);
-    alert('Successfully imported ' + newContacts.length + ' contact' + (newContacts.length !== 1 ? 's' : '') + ' from Gmail!');
+    alert('Imported ' + importedCount + ' email' + (importedCount !== 1 ? 's' : '') + ' as interactions!');
     closeGmailImportModal();
-    renderCustomerList();
+    if (currentDetailId) openCustomerDetail(currentDetailId);
+    else renderCustomerList();
 }
 
 // ---- Helpers ----
