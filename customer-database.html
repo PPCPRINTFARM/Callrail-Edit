@@ -43,6 +43,7 @@
             </div>
             <div class="flex items-center space-x-3">
                 <span id="customer-count" class="bg-white/20 text-sm px-3 py-1 rounded-full">0 customers</span>
+                <button onclick="openGmailImportModal()" class="bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition text-sm">Import from Gmail</button>
                 <button onclick="showView('add-customer')" class="bg-white text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 transition text-sm">+ New Customer</button>
             </div>
         </div>
@@ -239,6 +240,40 @@
                     <input type="file" id="import-file" accept=".json" class="w-full text-sm border rounded-lg p-2" onchange="importData(event)">
                 </div>
                 <button onclick="closeExportModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gmail Import Modal -->
+    <div id="gmail-import-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-4">Import from Gmail Contacts</h3>
+            <div class="space-y-4">
+                <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-800">
+                    <p class="font-semibold mb-2">How to export your Gmail contacts:</p>
+                    <ol class="list-decimal ml-4 space-y-1">
+                        <li>Go to <strong>contacts.google.com</strong></li>
+                        <li>Click <strong>Export</strong> in the left sidebar</li>
+                        <li>Select contacts to export (or all)</li>
+                        <li>Choose <strong>Google CSV</strong> format</li>
+                        <li>Click <strong>Export</strong> and upload the file below</li>
+                    </ol>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Upload Google Contacts CSV</label>
+                    <input type="file" id="gmail-import-file" accept=".csv" class="w-full text-sm border rounded-lg p-2">
+                </div>
+                <div id="gmail-import-preview" class="hidden">
+                    <div class="border rounded-lg p-3 bg-gray-50 max-h-48 overflow-y-auto">
+                        <p class="text-sm font-medium text-gray-700 mb-2">Preview:</p>
+                        <div id="gmail-preview-list" class="text-sm text-gray-600 space-y-1"></div>
+                    </div>
+                </div>
+                <div id="gmail-import-stats" class="hidden text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg p-3"></div>
+                <div class="flex space-x-3">
+                    <button id="gmail-import-btn" onclick="importGmailContacts()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed" disabled>Import Contacts</button>
+                    <button onclick="closeGmailImportModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium">Close</button>
+                </div>
             </div>
         </div>
     </div>
@@ -849,6 +884,202 @@ function importData(event) {
         }
     };
     reader.readAsText(file);
+}
+
+// ---- Gmail Import ----
+
+let gmailParsedContacts = [];
+
+function openGmailImportModal() {
+    document.getElementById('gmail-import-modal').classList.remove('hidden');
+    document.getElementById('gmail-import-modal').classList.add('flex');
+    document.getElementById('gmail-import-file').value = '';
+    document.getElementById('gmail-import-preview').classList.add('hidden');
+    document.getElementById('gmail-import-stats').classList.add('hidden');
+    document.getElementById('gmail-import-btn').disabled = true;
+    gmailParsedContacts = [];
+}
+
+function closeGmailImportModal() {
+    document.getElementById('gmail-import-modal').classList.add('hidden');
+    document.getElementById('gmail-import-modal').classList.remove('flex');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const fileInput = document.getElementById('gmail-import-file');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                parseGmailCSV(ev.target.result);
+            };
+            reader.readAsText(file);
+        });
+    }
+});
+
+function parseCSVLine(line) {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQuotes) {
+            if (ch === '"' && line[i + 1] === '"') {
+                current += '"';
+                i++;
+            } else if (ch === '"') {
+                inQuotes = false;
+            } else {
+                current += ch;
+            }
+        } else {
+            if (ch === '"') {
+                inQuotes = true;
+            } else if (ch === ',') {
+                values.push(current.trim());
+                current = '';
+            } else {
+                current += ch;
+            }
+        }
+    }
+    values.push(current.trim());
+    return values;
+}
+
+function parseGmailCSV(csvText) {
+    const lines = csvText.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) {
+        alert('CSV file appears to be empty.');
+        return;
+    }
+
+    const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+
+    // Google Contacts CSV column mapping
+    const firstIdx = headers.indexOf('first name');
+    const lastIdx = headers.indexOf('last name');
+    const nameIdx = headers.indexOf('name');
+    const email1Idx = headers.indexOf('e-mail 1 - value');
+    const emailAlt = headers.indexOf('email');
+    const emailIdx = email1Idx !== -1 ? email1Idx : emailAlt;
+    const phone1Idx = headers.indexOf('phone 1 - value');
+    const phoneAlt = headers.indexOf('phone');
+    const phoneIdx = phone1Idx !== -1 ? phone1Idx : phoneAlt;
+    const orgIdx = headers.indexOf('organization 1 - name');
+    const orgAlt = headers.indexOf('company');
+    const companyIdx = orgIdx !== -1 ? orgIdx : orgAlt;
+    const addr1Idx = headers.indexOf('address 1 - formatted');
+    const addrAlt = headers.indexOf('address');
+    const addressIdx = addr1Idx !== -1 ? addr1Idx : addrAlt;
+    const notesIdx = headers.indexOf('notes');
+
+    gmailParsedContacts = [];
+    const existing = getAllCustomers();
+
+    for (let i = 1; i < lines.length; i++) {
+        const vals = parseCSVLine(lines[i]);
+        if (vals.length < 2) continue;
+
+        let firstName = (firstIdx !== -1 ? vals[firstIdx] : '') || '';
+        let lastName = (lastIdx !== -1 ? vals[lastIdx] : '') || '';
+
+        // Fall back to "Name" column if first/last not found
+        if (!firstName && !lastName && nameIdx !== -1 && vals[nameIdx]) {
+            const parts = vals[nameIdx].split(' ');
+            firstName = parts[0] || '';
+            lastName = parts.slice(1).join(' ') || '';
+        }
+
+        const email = (emailIdx !== -1 ? vals[emailIdx] : '') || '';
+        const phone = (phoneIdx !== -1 ? vals[phoneIdx] : '') || '';
+        const company = (companyIdx !== -1 ? vals[companyIdx] : '') || '';
+        const address = (addressIdx !== -1 ? vals[addressIdx] : '') || '';
+        const notes = (notesIdx !== -1 ? vals[notesIdx] : '') || '';
+
+        // Skip rows with no useful data
+        if (!firstName && !lastName && !email && !phone) continue;
+
+        // Check for duplicates by email or phone
+        const isDuplicate = existing.some(c =>
+            (email && c.email && c.email.toLowerCase() === email.toLowerCase()) ||
+            (phone && normalizePhone(c.phone) === normalizePhone(phone))
+        );
+
+        gmailParsedContacts.push({
+            firstName: firstName || '(No first name)',
+            lastName: lastName || '(No last name)',
+            email, phone, company, address, notes,
+            isDuplicate
+        });
+    }
+
+    // Show preview
+    const previewEl = document.getElementById('gmail-preview-list');
+    const previewContainer = document.getElementById('gmail-import-preview');
+    const newContacts = gmailParsedContacts.filter(c => !c.isDuplicate);
+    const dupes = gmailParsedContacts.filter(c => c.isDuplicate);
+
+    previewEl.innerHTML = '';
+    const showCount = Math.min(newContacts.length, 10);
+    for (let i = 0; i < showCount; i++) {
+        const c = newContacts[i];
+        const div = document.createElement('div');
+        div.textContent = c.firstName + ' ' + c.lastName +
+            (c.email ? ' - ' + c.email : '') +
+            (c.phone ? ' - ' + c.phone : '');
+        previewEl.appendChild(div);
+    }
+    if (newContacts.length > 10) {
+        const more = document.createElement('div');
+        more.className = 'text-gray-400 italic';
+        more.textContent = '... and ' + (newContacts.length - 10) + ' more';
+        previewEl.appendChild(more);
+    }
+
+    const statsEl = document.getElementById('gmail-import-stats');
+    statsEl.innerHTML = '<strong>' + newContacts.length + '</strong> new contact' + (newContacts.length !== 1 ? 's' : '') + ' found.' +
+        (dupes.length > 0 ? ' <span class="text-yellow-700">' + dupes.length + ' duplicate' + (dupes.length !== 1 ? 's' : '') + ' will be skipped.</span>' : '');
+    statsEl.classList.remove('hidden');
+    previewContainer.classList.remove('hidden');
+
+    document.getElementById('gmail-import-btn').disabled = newContacts.length === 0;
+}
+
+function importGmailContacts() {
+    const newContacts = gmailParsedContacts.filter(c => !c.isDuplicate);
+    if (newContacts.length === 0) {
+        alert('No new contacts to import.');
+        return;
+    }
+
+    const now = new Date().toISOString();
+    const db = loadDatabase();
+
+    for (const c of newContacts) {
+        const customer = {
+            id: generateId(),
+            firstName: c.firstName,
+            lastName: c.lastName,
+            company: c.company,
+            phone: c.phone,
+            email: c.email,
+            address: c.address,
+            notes: c.notes ? c.notes : 'Imported from Gmail',
+            interactions: [],
+            createdAt: now,
+            updatedAt: now
+        };
+        db[customer.id] = customer;
+    }
+
+    saveDatabase(db);
+    alert('Successfully imported ' + newContacts.length + ' contact' + (newContacts.length !== 1 ? 's' : '') + ' from Gmail!');
+    closeGmailImportModal();
+    renderCustomerList();
 }
 
 // ---- Helpers ----
