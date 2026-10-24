@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw · Walter</title>
+<style>
+  :root {
+    --bg:       #060e1a;
+    --panel:    #0b1828;
+    --border:   #1a3050;
+    --cyan:     #2dd4bf;
+    --cyan-dim: #1a7a6e;
+    --green:    #22c55e;
+    --red:      #ef4444;
+    --amber:    #f59e0b;
+    --muted:    #4a6a8a;
+    --text:     #cce8f4;
+    --font:     'Courier New', 'Lucida Console', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    min-height: 100vh;
+    padding: 16px;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(45,212,191,0.03) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(14,50,80,0.4) 0%, transparent 50%);
+  }
+
+  /* ── TOP BAR ───────────────────────────────────── */
+  #topbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 14px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  #topbar .live-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 6px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  #topbar .label { color: var(--cyan); font-weight: bold; }
+  #topbar .val   { color: var(--text); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
+
+  /* ── JARVIS BAR ────────────────────────────────── */
+  #jarvis-bar {
+    background: linear-gradient(90deg, #0b1828 0%, #071220 100%);
+    border: 1px solid var(--cyan-dim);
+    border-radius: 6px;
+    padding: 8px 14px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 36px;
+  }
+  #jarvis-bar .j-label {
+    color: var(--cyan);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+  #jarvis-msg { color: var(--text); font-size: 12px; flex: 1; }
+  #jarvis-bar button {
+    background: transparent;
+    border: 1px solid var(--cyan-dim);
+    color: var(--cyan);
+    font-family: var(--font);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+  }
+  #jarvis-bar button:hover { background: rgba(45,212,191,0.08); }
+
+  /* ── SECTION HEADER ────────────────────────────── */
+  .section-head {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-head::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── GRID ──────────────────────────────────────── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
+  @media (max-width: 900px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ── PANEL ─────────────────────────────────────── */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+
+  /* ── MODEL CARD ────────────────────────────────── */
+  .model-card {
+    background: #0d1e30;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .model-card:last-child { margin-bottom: 0; }
+  .model-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .model-name { color: var(--cyan); font-size: 14px; letter-spacing: 0.04em; }
+  .model-port {
+    background: #102030;
+    border: 1px solid var(--cyan-dim);
+    color: var(--cyan);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.1em;
+  }
+  .model-size { color: var(--text); font-size: 18px; font-weight: bold; }
+  .model-meta { color: var(--muted); font-size: 11px; margin-bottom: 8px; }
+  .model-bar { background: var(--border); border-radius: 2px; height: 4px; margin-bottom: 6px; overflow: hidden; }
+  .model-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--cyan-dim), var(--cyan)); transition: width 1s; }
+  .model-status { color: var(--muted); font-size: 11px; letter-spacing: 0.1em; }
+  .model-status .warm { color: var(--green); }
+
+  /* ── SERVICE DOT ───────────────────────────────── */
+  .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .svc {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .svc.on  { color: var(--text); }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2a3a4a;
+    flex-shrink: 0;
+  }
+  .dot.on  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot.off { background: #2a3a4a; }
+  .dot.warn{ background: var(--amber); }
+
+  /* ── VITALS CARD ───────────────────────────────── */
+  .vital-card {
+    background: #0d1e30;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+  }
+  .vital-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .vital-val {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .vital-val.warn { color: var(--amber); }
+  .vital-val.crit { color: var(--red); }
+  .vital-val.good { color: var(--cyan); }
+  .vital-sub { font-size: 10px; color: var(--muted); margin-bottom: 8px; }
+  canvas.sparkline { width: 100%; height: 30px; display: block; }
+
+  /* ── TASK LEDGER ───────────────────────────────── */
+  .task-counts {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .task-count-cell { text-align: center; }
+  .task-count-num {
+    font-size: 40px;
+    font-weight: bold;
+    color: var(--cyan);
+    line-height: 1;
+  }
+  .task-count-num.has-items { color: var(--amber); }
+  .task-count-lbl {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .task-completed {
+    text-align: right;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .task-completed .num { color: var(--green); }
+
+  /* ── QUICK ADD TASK ─────────────────────────────── */
+  .task-add {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .task-add input {
+    flex: 1;
+    background: #0a1825;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    outline: none;
+  }
+  .task-add input:focus { border-color: var(--cyan-dim); }
+  .task-add select {
+    background: #0a1825;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    outline: none;
+  }
+  .task-add button {
+    background: var(--cyan-dim);
+    border: none;
+    color: var(--bg);
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: bold;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+  }
+  .task-add button:hover { background: var(--cyan); }
+
+  /* ── TASK LIST ──────────────────────────────────── */
+  #task-open-list { margin-top: 8px; }
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .task-item:last-child { border-bottom: none; }
+  .task-item input[type=checkbox] { accent-color: var(--cyan); width: 14px; height: 14px; cursor: pointer; }
+  .task-item .t-title { flex: 1; color: var(--text); }
+  .task-item .t-pri { font-size: 10px; padding: 1px 6px; border-radius: 3px; }
+  .t-pri.high { background: rgba(239,68,68,0.15); color: var(--red); }
+  .t-pri.normal { background: rgba(45,212,191,0.1); color: var(--cyan); }
+  .t-pri.low { background: rgba(74,106,138,0.2); color: var(--muted); }
+  .task-item .t-del { color: var(--muted); cursor: pointer; font-size: 14px; }
+  .task-item .t-del:hover { color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- TOP TELEMETRY BAR -->
+<div id="topbar">
+  <span><span class="live-dot"></span><span class="label">TELEMETRY</span> <span class="val">LIVE</span></span>
+  <span><span class="label">UPTIME</span> <span class="val" id="tb-uptime">—</span></span>
+  <span><span class="label">EXO</span> <span class="val" id="tb-exo">IDLE</span> · <span class="label">DISK</span> <span class="val" id="tb-disk">—</span></span>
+</div>
+
+<!-- JARVIS BAR -->
+<div id="jarvis-bar">
+  <span class="j-label">JARVIS</span>
+  <span id="jarvis-msg">Initializing Walter systems...</span>
+  <button onclick="jarvisRepeat()">&#9654; REPEAT</button>
+  <button id="voice-btn" onclick="toggleVoice()">&#128266; VOICE ON</button>
+</div>
+
+<!-- LOCAL INTELLIGENCE -->
+<div class="panel">
+  <div class="section-head">LOCAL INTELLIGENCE <span style="margin-left:8px;color:var(--text)" id="mem-resident"></span></div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;font-size:11px;letter-spacing:0.1em;color:var(--muted)">
+    OLLAMA &nbsp;·&nbsp; WARM MODELS
+    <span style="margin-left:auto;color:var(--green)" id="servers-up">— SERVERS UP</span>
+  </div>
+  <div id="model-list">
+    <!-- Populated by JS -->
+    <div class="model-card" style="color:var(--muted);font-size:12px;padding:20px;text-align:center">Querying Ollama...</div>
+  </div>
+</div>
+
+<!-- SERVICES + VITALS -->
+<div class="grid-2">
+
+  <!-- SERVICES -->
+  <div class="panel" style="margin-bottom:0">
+    <div class="section-head">SERVICES</div>
+    <div class="services-grid" id="svc-grid">
+      <div class="svc on"><div class="dot on" id="dot-openclaw"></div>OpenClaw gateway</div>
+      <div class="svc"><div class="dot off" id="dot-ollama-main"></div><span id="svc-ollama-main">Ollama main :11434 · off</span></div>
+      <div class="svc on"><div class="dot on" id="dot-ollama-fast"></div><span id="svc-ollama-fast">Ollama fast :11437</span></div>
+      <div class="svc"><div class="dot off" id="dot-n8n"></div><span id="svc-n8n">n8n · off</span></div>
+      <div class="svc"><div class="dot off" id="dot-spine"></div>Spine API · off</div>
+      <div class="svc"><div class="dot off" id="dot-sms"></div>SMS dispatcher · off</div>
+    </div>
+  </div>
+
+  <!-- WALTER VITALS -->
+  <div class="panel" style="margin-bottom:0">
+    <div class="section-head">WALTER VITALS</div>
+    <div class="grid-4" style="margin-bottom:0">
+      <div class="vital-card">
+        <div class="vital-label">LOAD 1M</div>
+        <div class="vital-val" id="v-load">—</div>
+        <div class="vital-sub" id="v-load-sub">&nbsp;</div>
+        <canvas class="sparkline" id="spark-load" width="200" height="30"></canvas>
+      </div>
+      <div class="vital-card">
+        <div class="vital-label">MEMORY FREE</div>
+        <div class="vital-val" id="v-mem">—</div>
+        <div class="vital-sub" id="v-mem-sub">&nbsp;</div>
+        <canvas class="sparkline" id="spark-mem" width="200" height="30"></canvas>
+      </div>
+      <div class="vital-card">
+        <div class="vital-label">GPU</div>
+        <div class="vital-val" id="v-gpu">—</div>
+        <div class="vital-sub" id="v-gpu-sub">unavailable</div>
+        <canvas class="sparkline" id="spark-gpu" width="200" height="30"></canvas>
+      </div>
+      <div class="vital-card">
+        <div class="vital-label">TEMP</div>
+        <div class="vital-val" id="v-temp">—</div>
+        <div class="vital-sub" id="v-temp-sub">unavailable</div>
+        <canvas class="sparkline" id="spark-temp" width="200" height="30"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TASK LEDGER -->
+<div class="panel">
+  <div class="section-head" style="margin-bottom:6px">
+    TASK LEDGER
+    <span style="margin-left:auto;letter-spacing:0.1em;font-size:11px">
+      <span class="num" id="completed-num" style="color:var(--green)">0</span>
+      <span style="color:var(--muted)"> COMPLETED</span>
+    </span>
+  </div>
+  <div class="task-counts">
+    <div class="task-count-cell">
+      <div class="task-count-num" id="tc-queued">0</div>
+      <div class="task-count-lbl">QUEUED</div>
+    </div>
+    <div class="task-count-cell">
+      <div class="task-count-num" id="tc-inprogress">0</div>
+      <div class="task-count-lbl">IN PROGRESS</div>
+    </div>
+    <div class="task-count-cell">
+      <div class="task-count-num" id="tc-waiting">0</div>
+      <div class="task-count-lbl">WAITING</div>
+    </div>
+    <div class="task-count-cell">
+      <div class="task-count-num" id="tc-review">0</div>
+      <div class="task-count-lbl">NEEDS REVIEW</div>
+    </div>
+  </div>
+
+  <div id="task-open-list"></div>
+
+  <div class="task-add">
+    <input type="text" id="task-input" placeholder="New task..." onkeydown="if(event.key==='Enter')addTask()">
+    <select id="task-pri">
+      <option value="normal">Normal</option>
+      <option value="high">High</option>
+      <option value="low">Low</option>
+    </select>
+    <select id="task-status">
+      <option value="queued">Queued</option>
+      <option value="inprogress">In Progress</option>
+      <option value="waiting">Waiting</option>
+      <option value="review">Needs Review</option>
+    </select>
+    <button onclick="addTask()">+ ADD</button>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+// CONFIG — adjust these if your OpenClaw gateway port differs
+// ─────────────────────────────────────────────────────────
+const OLLAMA_MAIN = 'http://localhost:11434';
+const OLLAMA_FAST = 'http://localhost:11437';
+const VITALS_API  = 'http://localhost:5005/api/vitals'; // OpenClaw vitals endpoint
+
+// ─────────────────────────────────────────────────────────
+// JARVIS VOICE
+// ─────────────────────────────────────────────────────────
+let voiceOn = true;
+const synth = window.speechSynthesis;
+
+function jarvisSpeak(text) {
+  if (!voiceOn || !synth) return;
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.88; u.pitch = 0.82; u.volume = 0.9;
+  const voices = synth.getVoices();
+  const v = voices.find(x => /samantha|alex|daniel|google us/i.test(x.name))
+         || voices.find(x => x.lang === 'en-US') || voices[0];
+  if (v) u.voice = v;
+  synth.speak(u);
+}
+
+function setJarvis(text, speak = false) {
+  document.getElementById('jarvis-msg').textContent = text;
+  if (speak) jarvisSpeak(text);
+}
+
+function jarvisRepeat() { jarvisSpeak(document.getElementById('jarvis-msg').textContent); }
+
+function toggleVoice() {
+  voiceOn = !voiceOn;
+  document.getElementById('voice-btn').textContent = voiceOn ? '🔊 VOICE ON' : '🔇 VOICE OFF';
+  if (!voiceOn) synth.cancel();
+}
+
+function jarvisGreeting(modelCount, openTasks) {
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  let msg = `${greet}, Glen. Walter is online.`;
+  if (modelCount > 0) msg += ` ${modelCount} Ollama model${modelCount > 1 ? 's' : ''} warm.`;
+  if (openTasks > 0) msg += ` ${openTasks} open task${openTasks > 1 ? 's' : ''} need attention.`;
+  else msg += ' No open tasks.';
+  setJarvis(msg, true);
+}
+
+// ─────────────────────────────────────────────────────────
+// UPTIME CLOCK
+// ─────────────────────────────────────────────────────────
+const startTime = Date.now();
+function updateUptime() {
+  // Use performance.timing for real session uptime, or just show current time
+  const now = new Date();
+  const h = now.getHours().toString().padStart(2,'0');
+  const m = now.getMinutes().toString().padStart(2,'0');
+  // Try to get real uptime from vitals; fallback to session time
+  const sessionSec = Math.floor((Date.now() - startTime) / 1000);
+  const sh = Math.floor(sessionSec / 3600).toString().padStart(2,'0');
+  const sm = Math.floor((sessionSec % 3600) / 60).toString().padStart(2,'0');
+  document.getElementById('tb-uptime').textContent = `${h}H ${m}M`;
+}
+setInterval(updateUptime, 60000);
+updateUptime();
+
+// ─────────────────────────────────────────────────────────
+// OLLAMA MODEL CARDS
+// ─────────────────────────────────────────────────────────
+const MODEL_PORT_LABELS = {
+  11434: 'MAIN :11434',
+  11437: 'FAST :11437',
+};
+
+function fmtBytes(b) {
+  if (!b) return '—';
+  const gb = b / 1e9;
+  return gb >= 1 ? gb.toFixed(1) + ' GB' : (b / 1e6).toFixed(0) + ' MB';
+}
+
+function fmtAge(ns) {
+  if (!ns) return '';
+  const s = Math.floor(ns / 1e9);
+  if (s < 60) return `WARM ${s}S`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `WARM ${m}M`;
+  const h = Math.floor(m / 60);
+  const rm = m % 60;
+  return `WARM ${h}H ${rm}M`;
+}
+
+async function fetchModels() {
+  const results = [];
+  for (const [port, label] of [[11434, 'MAIN :11434'], [11437, 'FAST :11437']]) {
+    try {
+      const r = await fetch(`http://localhost:${port}/api/ps`, { signal: AbortSignal.timeout(2000) });
+      if (!r.ok) throw new Error('not ok');
+      const d = await r.json();
+      (d.models || []).forEach(m => results.push({ ...m, port, label }));
+    } catch { /* server off */ }
+  }
+  return results;
+}
+
+const MAX_MODEL_MEM = 32 * 1e9; // 32 GB reference for bar width
+
+function renderModels(models) {
+  const el = document.getElementById('model-list');
+  const up = models.length > 0 ? `${models.length}/2 SERVERS UP` : '0/2 SERVERS UP';
+  document.getElementById('servers-up').textContent = up;
+
+  if (models.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:16px;text-align:center;letter-spacing:0.1em">NO WARM MODELS DETECTED</div>';
+    return;
+  }
+
+  el.innerHTML = models.map(m => {
+    const pct = Math.min(100, Math.round((m.size_vram || m.size || 0) / MAX_MODEL_MEM * 100));
+    const age = fmtAge(m.expires_at ? (new Date(m.expires_at) - Date.now()) * -1e6 : null);
+    const quant = m.details?.quantization_level || '';
+    const params = m.details?.parameter_size || '';
+    return `
+    <div class="model-card">
+      <div class="model-top">
+        <span class="model-name">${m.name || m.model}</span>
+        <span class="model-port">${m.label}</span>
+      </div>
+      <div class="model-size">${fmtBytes(m.size_vram || m.size)}</div>
+      <div class="model-meta">${params}${params && quant ? ' · ' : ''}${quant}</div>
+      <div class="model-bar"><div class="model-bar-fill" style="width:${pct}%"></div></div>
+      <div class="model-status"><span class="warm">WARM</span>${age ? ' ' + age.replace('WARM ','') : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────────────────
+// SERVICES PROBE
+// ─────────────────────────────────────────────────────────
+async function probePort(port) {
+  try {
+    await fetch(`http://localhost:${port}/api/tags`, { signal: AbortSignal.timeout(1500) });
+    return true;
+  } catch { return false; }
+}
+
+async function updateServices() {
+  const mainUp = await probePort(11434);
+  const fastUp = await probePort(11437);
+
+  const set = (dotId, lblId, on, label) => {
+    const dot = document.getElementById(dotId);
+    const lbl = document.getElementById(lblId);
+    if (dot) { dot.className = 'dot ' + (on ? 'on' : 'off'); dot.closest('.svc').className = 'svc' + (on ? ' on' : ''); }
+    if (lbl) lbl.textContent = label + (on ? '' : ' · off');
+  };
+  set('dot-ollama-main', 'svc-ollama-main', mainUp, 'Ollama main :11434');
+  set('dot-ollama-fast', 'svc-ollama-fast', fastUp, 'Ollama fast :11437');
+}
+
+// ─────────────────────────────────────────────────────────
+// SPARKLINES
+// ─────────────────────────────────────────────────────────
+const sparkData = { load: [], mem: [], gpu: [], temp: [] };
+const SPARK_MAX = 30;
+
+function drawSparkline(canvasId, data, color = '#2dd4bf') {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || data.length < 2) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 200;
+  const H = canvas.offsetHeight || 30;
+  canvas.width = W; canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  data.forEach((v, i) => {
+    const x = (i / (data.length - 1)) * W;
+    const y = H - ((v - min) / range) * (H - 4) - 2;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  // Fill under line
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+  ctx.fillStyle = color + '18';
+  ctx.fill();
+}
+
+function pushSpark(key, val) {
+  sparkData[key].push(val);
+  if (sparkData[key].length > SPARK_MAX) sparkData[key].shift();
+}
+
+// ─────────────────────────────────────────────────────────
+// VITALS — tries OpenClaw vitals endpoint; falls back gracefully
+// ─────────────────────────────────────────────────────────
+async function fetchVitals() {
+  try {
+    const r = await fetch(VITALS_API, { signal: AbortSignal.timeout(1500) });
+    if (!r.ok) throw new Error();
+    return await r.json();
+  } catch { return null; }
+}
+
+function setVital(id, subId, val, sub, cls = '') {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = val; el.className = 'vital-val' + (cls ? ' ' + cls : ''); }
+  const sel = document.getElementById(subId);
+  if (sel) sel.textContent = sub;
+}
+
+async function updateVitals() {
+  const v = await fetchVitals();
+  if (v) {
+    // OpenClaw vitals endpoint returns: { load1: N, memFree: N (%), gpu: N (%), temp: N (°C), disk: "X TB", uptime: "Xh Ym", exo: "IDLE"|"ACTIVE" }
+    if (v.load1 !== undefined) {
+      const load = parseFloat(v.load1).toFixed(2);
+      setVital('v-load', 'v-load-sub', load, '', parseFloat(load) > 10 ? 'warn' : 'good');
+      pushSpark('load', parseFloat(load));
+      drawSparkline('spark-load', sparkData.load);
+    }
+    if (v.memFree !== undefined) {
+      setVital('v-mem', 'v-mem-sub', Math.round(v.memFree) + '%', '', v.memFree < 20 ? 'crit' : v.memFree < 40 ? 'warn' : '');
+      pushSpark('mem', v.memFree);
+      drawSparkline('spark-mem', sparkData.mem, '#22c55e');
+    }
+    if (v.gpu !== undefined) {
+      setVital('v-gpu', 'v-gpu-sub', Math.round(v.gpu) + '%', 'utilization', v.gpu > 90 ? 'crit' : v.gpu > 70 ? 'warn' : '');
+      pushSpark('gpu', v.gpu);
+      drawSparkline('spark-gpu', sparkData.gpu, '#a855f7');
+    }
+    if (v.temp !== undefined) {
+      setVital('v-temp', 'v-temp-sub', Math.round(v.temp) + '°', 'celsius', v.temp > 85 ? 'crit' : v.temp > 70 ? 'warn' : '');
+      pushSpark('temp', v.temp);
+      drawSparkline('spark-temp', sparkData.temp, '#f59e0b');
+    }
+    if (v.disk) document.getElementById('tb-disk').textContent = v.disk;
+    if (v.exo)  document.getElementById('tb-exo').textContent = v.exo;
+    if (v.uptime) document.getElementById('tb-uptime').textContent = v.uptime;
+    document.getElementById('v-gpu-sub').textContent = v.gpu !== undefined ? 'utilization' : 'unavailable';
+    document.getElementById('v-temp-sub').textContent = v.temp !== undefined ? 'celsius' : 'unavailable';
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// TASK LEDGER (localStorage)
+// ─────────────────────────────────────────────────────────
+const STATUS_KEYS = ['queued','inprogress','waiting','review'];
+
+function getTasks() {
+  try { return JSON.parse(localStorage.getItem('walter_tasks') || '[]'); } catch { return []; }
+}
+function saveTasks(t) {
+  try { localStorage.setItem('walter_tasks', JSON.stringify(t)); } catch {}
+}
+
+function addTask() {
+  const val = document.getElementById('task-input').value.trim();
+  if (!val) return;
+  const tasks = getTasks();
+  tasks.unshift({
+    id: Date.now(),
+    title: val,
+    priority: document.getElementById('task-pri').value,
+    status: document.getElementById('task-status').value,
+    done: false,
+    created: new Date().toISOString()
+  });
+  saveTasks(tasks);
+  document.getElementById('task-input').value = '';
+  renderTasks();
+  setJarvis('Task added: ' + val, true);
+}
+
+function completeTask(id) {
+  const tasks = getTasks();
+  const t = tasks.find(x => x.id === id);
+  if (t) { t.done = true; t.status = 'done'; }
+  saveTasks(tasks);
+  renderTasks();
+  if (t) setJarvis('Task complete: ' + t.title, true);
+}
+
+function deleteTask(id) {
+  saveTasks(getTasks().filter(x => x.id !== id));
+  renderTasks();
+}
+
+function renderTasks() {
+  const tasks = getTasks();
+  const counts = { queued: 0, inprogress: 0, waiting: 0, review: 0, done: 0 };
+  tasks.forEach(t => { if (t.done) counts.done++; else counts[t.status] = (counts[t.status] || 0) + 1; });
+
+  STATUS_KEYS.forEach(k => {
+    const el = document.getElementById('tc-' + k);
+    if (el) { el.textContent = counts[k] || 0; el.className = 'task-count-num' + (counts[k] > 0 ? ' has-items' : ''); }
+  });
+  const comp = document.getElementById('completed-num');
+  if (comp) comp.textContent = counts.done;
+
+  const open = tasks.filter(t => !t.done);
+  const list = document.getElementById('task-open-list');
+  if (!list) return;
+
+  if (open.length === 0) { list.innerHTML = ''; return; }
+
+  const priLabel = { high: 'HIGH', normal: 'NRM', low: 'LOW' };
+  list.innerHTML = open.slice(0, 8).map(t => `
+    <div class="task-item">
+      <input type="checkbox" onchange="completeTask(${t.id})">
+      <span class="task-item t-title">${esc(t.title)}</span>
+      <span class="t-pri ${t.priority}">${priLabel[t.priority] || t.priority}</span>
+      <span class="t-del" onclick="deleteTask(${t.id})">&times;</span>
+    </div>
+  `).join('');
+  return open.length;
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─────────────────────────────────────────────────────────
+// BOOT SEQUENCE
+// ─────────────────────────────────────────────────────────
+async function boot() {
+  setJarvis('Querying Ollama servers...');
+  renderTasks();
+
+  const [models] = await Promise.all([
+    fetchModels(),
+    updateServices(),
+    updateVitals()
+  ]);
+
+  renderModels(models);
+
+  const openCount = getTasks().filter(t => !t.done).length;
+
+  // Greet after voices load
+  const doGreet = () => jarvisGreeting(models.length, openCount);
+  if (synth.getVoices().length) doGreet();
+  else synth.onvoiceschanged = doGreet;
+  setTimeout(doGreet, 900);
+}
+
+// Refresh vitals every 15s, services every 30s, models every 60s
+setInterval(updateVitals, 15000);
+setInterval(updateServices, 30000);
+setInterval(async () => { const m = await fetchModels(); renderModels(m); }, 60000);
+
+boot();
+</script>
+</body>
+</html>

@@ -1,15 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CallRail CRM</title>
+    <title>CallRail CRM — Phoenix Phase Converters</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .vitals-pulse { animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+        .task-done { text-decoration: line-through; opacity: 0.5; }
+        #jarvis-bar { transition: opacity 0.5s ease; }
+        .jarvis-speak { animation: jarvisFade 0.3s ease; }
+        @keyframes jarvisFade { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    </style>
 </head>
 <body class="bg-gray-50">
+    <!-- Jarvis Status Bar -->
+    <div id="jarvis-bar" class="bg-blue-900 text-blue-100 text-sm px-4 py-2 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <span class="text-blue-400 font-bold uppercase tracking-widest text-xs">JARVIS</span>
+            <span id="jarvis-msg" class="jarvis-speak">Initializing...</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="jarvisSpeak(document.getElementById('jarvis-msg').textContent)" title="Repeat" class="text-blue-300 hover:text-white text-xs px-2 py-1 rounded border border-blue-700 hover:border-blue-400">&#9654; Repeat</button>
+            <button onclick="toggleVoice()" id="voice-toggle" class="text-blue-300 hover:text-white text-xs px-2 py-1 rounded border border-blue-700 hover:border-blue-400">&#128266; Voice On</button>
+        </div>
+    </div>
+
     <div class="min-h-screen">
         <!-- Header -->
         <header class="bg-white shadow border-b">
-            <div class="max-w-7xl mx-auto px-4 py-4">
-                <h1 class="text-2xl font-bold text-blue-600">CallRail CRM</h1>
+            <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-blue-600">CallRail CRM <span class="text-gray-400 text-base font-normal">— Phoenix Phase Converters</span></h1>
+                <div class="text-sm text-gray-500" id="clock"></div>
             </div>
         </header>
 
@@ -20,26 +41,60 @@
                     <button onclick="showTab('dashboard')" id="tab-dashboard" class="py-4 px-2 border-b-2 border-blue-500 text-blue-600 font-medium text-sm">Dashboard</button>
                     <button onclick="showTab('leads')" id="tab-leads" class="py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700">Leads</button>
                     <button onclick="showTab('calls')" id="tab-calls" class="py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700">Calls</button>
+                    <button onclick="showTab('tasks')" id="tab-tasks" class="py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700">Task Ledger</button>
                 </div>
             </div>
         </nav>
 
         <!-- Main Content -->
         <main class="max-w-7xl mx-auto px-4 py-8">
-            <!-- Dashboard Tab -->
+
+            <!-- DASHBOARD TAB -->
             <div id="dashboard-content">
+
+                <!-- Vitals Row -->
+                <div class="mb-2">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="w-2 h-2 bg-green-400 rounded-full vitals-pulse"></span>
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Live Vitals</span>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-5 rounded-xl shadow">
+                            <div class="text-xs font-semibold uppercase tracking-wider text-blue-200 mb-1">Today's Calls</div>
+                            <div class="text-3xl font-bold" id="vital-calls">—</div>
+                            <div class="text-xs text-blue-300 mt-1" id="vital-calls-sub">Loading...</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-600 to-green-800 text-white p-5 rounded-xl shadow">
+                            <div class="text-xs font-semibold uppercase tracking-wider text-green-200 mb-1">Open Pipeline</div>
+                            <div class="text-3xl font-bold" id="vital-pipeline">—</div>
+                            <div class="text-xs text-green-300 mt-1" id="vital-pipeline-sub">Loading...</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-600 to-purple-800 text-white p-5 rounded-xl shadow">
+                            <div class="text-xs font-semibold uppercase tracking-wider text-purple-200 mb-1">Open Tasks</div>
+                            <div class="text-3xl font-bold" id="vital-tasks">—</div>
+                            <div class="text-xs text-purple-300 mt-1" id="vital-tasks-sub">Loading...</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-orange-500 to-red-600 text-white p-5 rounded-xl shadow">
+                            <div class="text-xs font-semibold uppercase tracking-wider text-orange-200 mb-1">Avg Call Value</div>
+                            <div class="text-3xl font-bold" id="vital-avg">—</div>
+                            <div class="text-xs text-orange-200 mt-1" id="vital-avg-sub">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stat Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-lg shadow border">
                         <h3 class="text-sm text-gray-600">Total Leads</h3>
-                        <p class="text-2xl font-bold">3</p>
+                        <p class="text-2xl font-bold" id="stat-leads">3</p>
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow border">
                         <h3 class="text-sm text-gray-600">Total Calls</h3>
-                        <p class="text-2xl font-bold">12</p>
+                        <p class="text-2xl font-bold" id="stat-calls">12</p>
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow border">
                         <h3 class="text-sm text-gray-600">Pipeline Value</h3>
-                        <p class="text-2xl font-bold">$48,500</p>
+                        <p class="text-2xl font-bold" id="stat-pipeline">$48,500</p>
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow border">
                         <h3 class="text-sm text-gray-600">Avg Call Time</h3>
@@ -47,42 +102,68 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow border">
-                    <div class="p-6 border-b">
-                        <h2 class="text-lg font-semibold">Recent Call Activity</h2>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                            <div>
-                                <p class="font-medium">John Smith</p>
-                                <p class="text-sm text-gray-600">Inbound • 5:24</p>
+                <!-- Two-column layout: Recent Activity + Task Ledger Preview -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white rounded-lg shadow border">
+                        <div class="p-6 border-b">
+                            <h2 class="text-lg font-semibold">Recent Call Activity</h2>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium">John Smith</p>
+                                    <p class="text-sm text-gray-600">Inbound • 5:24</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-medium">$15,000</p>
+                                    <p class="text-sm text-gray-600">Oct 22</p>
+                                </div>
                             </div>
-                            <div class="text-right">
-                                <p class="font-medium">$15,000</p>
-                                <p class="text-sm text-gray-600">Aug 30</p>
+                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium">Sarah Johnson</p>
+                                    <p class="text-sm text-gray-600">Inbound • 2:36</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-medium">$8,500</p>
+                                    <p class="text-sm text-gray-600">Oct 21</p>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium">Hugh Hermiss — Control Distributors</p>
+                                    <p class="text-sm text-gray-600">Inbound • Quote sent</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-medium text-blue-600">$5,146</p>
+                                    <p class="text-sm text-gray-600">Oct 22</p>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                            <div>
-                                <p class="font-medium">Sarah Johnson</p>
-                                <p class="text-sm text-gray-600">Inbound • 2:36</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-medium">$8,500</p>
-                                <p class="text-sm text-gray-600">Aug 29</p>
-                            </div>
+                    </div>
+
+                    <!-- Task Ledger Preview on Dashboard -->
+                    <div class="bg-white rounded-lg shadow border">
+                        <div class="p-4 border-b flex items-center justify-between">
+                            <h2 class="text-base font-semibold">Task Ledger</h2>
+                            <button onclick="showTab('tasks')" class="text-xs text-blue-600 hover:underline">View all</button>
+                        </div>
+                        <div id="dash-task-preview" class="p-4 space-y-2">
+                            <p class="text-sm text-gray-400">No open tasks.</p>
+                        </div>
+                        <div class="p-4 border-t">
+                            <button onclick="showTab('tasks')" class="w-full text-sm bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700">+ Add Task</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Leads Tab -->
+            <!-- LEADS TAB -->
             <div id="leads-content" style="display: none;">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold">Leads</h2>
                     <button onclick="showAddModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Add Lead</button>
                 </div>
-
                 <div class="bg-white rounded-lg shadow border">
                     <table class="w-full">
                         <thead class="bg-gray-50">
@@ -128,12 +209,28 @@
                                     <button onclick="deleteLead(2)" class="text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">Delete</button>
                                 </td>
                             </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="font-medium">Hugh Hermiss</div>
+                                    <div class="text-sm text-gray-500">Control Distributors</div>
+                                </td>
+                                <td class="px-6 py-4 text-sm">—</td>
+                                <td class="px-6 py-4 text-sm">Inbound Call</td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Quote Sent</span>
+                                </td>
+                                <td class="px-6 py-4 text-sm font-medium">$5,146</td>
+                                <td class="px-6 py-4">
+                                    <button onclick="editLead(3)" class="text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm mr-2">Edit</button>
+                                    <button onclick="deleteLead(3)" class="text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">Delete</button>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Calls Tab -->
+            <!-- CALLS TAB -->
             <div id="calls-content" style="display: none;">
                 <h2 class="text-2xl font-bold mb-6">Call History</h2>
                 <div class="bg-white rounded-lg shadow border">
@@ -153,11 +250,9 @@
                                     <div class="font-medium">John Smith</div>
                                     <div class="text-sm text-gray-500">(555) 123-4567</div>
                                 </td>
-                                <td class="px-6 py-4 text-sm">2025-08-30</td>
+                                <td class="px-6 py-4 text-sm">2026-10-22</td>
                                 <td class="px-6 py-4 text-sm">5:24</td>
-                                <td class="px-6 py-4">
-                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Inbound</span>
-                                </td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Inbound</span></td>
                                 <td class="px-6 py-4 text-sm font-medium">$15,000</td>
                             </tr>
                             <tr class="hover:bg-gray-50">
@@ -165,17 +260,49 @@
                                     <div class="font-medium">Sarah Johnson</div>
                                     <div class="text-sm text-gray-500">(555) 987-6543</div>
                                 </td>
-                                <td class="px-6 py-4 text-sm">2025-08-29</td>
+                                <td class="px-6 py-4 text-sm">2026-10-21</td>
                                 <td class="px-6 py-4 text-sm">2:36</td>
-                                <td class="px-6 py-4">
-                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Inbound</span>
-                                </td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Inbound</span></td>
                                 <td class="px-6 py-4 text-sm font-medium">$8,500</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <!-- TASK LEDGER TAB -->
+            <div id="tasks-content" style="display: none;">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Task Ledger</h2>
+                    <div class="flex gap-2">
+                        <select id="task-filter" onchange="renderTasks()" class="border rounded-lg px-3 py-2 text-sm">
+                            <option value="all">All Tasks</option>
+                            <option value="open">Open Only</option>
+                            <option value="done">Done Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Add Task Form -->
+                <div class="bg-white rounded-lg shadow border p-5 mb-6">
+                    <h3 class="font-semibold text-gray-700 mb-3">Add Task</h3>
+                    <div class="flex gap-3 flex-wrap">
+                        <input type="text" id="task-title" placeholder="Task description..." class="flex-1 min-w-48 border rounded-lg px-3 py-2 text-sm">
+                        <select id="task-priority" class="border rounded-lg px-3 py-2 text-sm">
+                            <option value="normal">Normal</option>
+                            <option value="high">High Priority</option>
+                            <option value="low">Low</option>
+                        </select>
+                        <input type="date" id="task-due" class="border rounded-lg px-3 py-2 text-sm">
+                        <button onclick="addTask()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Add Task</button>
+                    </div>
+                </div>
+
+                <!-- Task List -->
+                <div id="task-list" class="space-y-2"></div>
+                <div id="task-empty" class="text-center text-gray-400 py-12" style="display:none">No tasks found.</div>
+            </div>
+
         </main>
     </div>
 
@@ -197,58 +324,235 @@
     </div>
 
     <script>
-        function showTab(tabName) {
-            // Hide all content
-            document.getElementById('dashboard-content').style.display = 'none';
-            document.getElementById('leads-content').style.display = 'none';
-            document.getElementById('calls-content').style.display = 'none';
-            
-            // Show selected content
-            document.getElementById(tabName + '-content').style.display = 'block';
-            
-            // Update tab styling
-            document.querySelectorAll('nav button').forEach(btn => {
-                btn.className = 'py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700';
-            });
-            document.getElementById('tab-' + tabName).className = 'py-4 px-2 border-b-2 border-blue-500 text-blue-600 font-medium text-sm';
-        }
+    // ── CLOCK ──────────────────────────────────────────────────────────────
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('clock').textContent = now.toLocaleString('en-US', {
+            weekday: 'short', month: 'short', day: 'numeric',
+            hour: 'numeric', minute: '2-digit', hour12: true
+        });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
 
-        function showAddModal() {
-            document.getElementById('add-modal').classList.remove('hidden');
-            document.getElementById('add-modal').classList.add('flex');
-        }
+    // ── JARVIS VOICE ───────────────────────────────────────────────────────
+    let voiceEnabled = true;
+    let synth = window.speechSynthesis;
+    let currentUtterance = null;
 
-        function closeModal() {
-            document.getElementById('add-modal').classList.add('hidden');
-            document.getElementById('add-modal').classList.remove('flex');
-        }
+    function jarvisSpeak(text) {
+        if (!voiceEnabled || !synth) return;
+        if (synth.speaking) synth.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 0.92;
+        utter.pitch = 0.85;
+        utter.volume = 0.9;
+        // Pick a deep/neutral voice when available
+        const voices = synth.getVoices();
+        const preferred = voices.find(v => /google us english|samantha|david|alex/i.test(v.name))
+                       || voices.find(v => v.lang === 'en-US' && v.default)
+                       || voices[0];
+        if (preferred) utter.voice = preferred;
+        currentUtterance = utter;
+        synth.speak(utter);
+    }
 
-        function saveLead() {
-            const name = document.getElementById('lead-name').value;
-            const company = document.getElementById('lead-company').value;
-            const phone = document.getElementById('lead-phone').value;
-            const value = document.getElementById('lead-value').value;
-            
-            if (name && phone) {
-                alert('Lead saved: ' + name + ' - ' + phone);
-                closeModal();
-                // Clear form
-                document.getElementById('lead-name').value = '';
-                document.getElementById('lead-company').value = '';
-                document.getElementById('lead-phone').value = '';
-                document.getElementById('lead-value').value = '';
-            }
-        }
+    function setJarvisMsg(text, speak) {
+        const el = document.getElementById('jarvis-msg');
+        el.textContent = text;
+        el.classList.remove('jarvis-speak');
+        void el.offsetWidth;
+        el.classList.add('jarvis-speak');
+        if (speak) jarvisSpeak(text);
+    }
 
-        function editLead(id) {
-            alert('Edit lead ' + id);
-        }
+    function toggleVoice() {
+        voiceEnabled = !voiceEnabled;
+        const btn = document.getElementById('voice-toggle');
+        btn.textContent = voiceEnabled ? '🔊 Voice On' : '🔇 Voice Off';
+        if (!voiceEnabled && synth.speaking) synth.cancel();
+    }
 
-        function deleteLead(id) {
-            if (confirm('Delete this lead?')) {
-                alert('Lead ' + id + ' deleted');
-            }
+    function jarvisGreeting() {
+        const hour = new Date().getHours();
+        let greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+        const openTasks = getTasks().filter(t => !t.done).length;
+        let msg = `${greeting}, Glen. Phoenix Phase Converters CRM is ready.`;
+        if (openTasks > 0) msg += ` You have ${openTasks} open task${openTasks > 1 ? 's' : ''}.`;
+        setJarvisMsg(msg, true);
+    }
+
+    // Delay greeting until voices load
+    if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = () => { if (synth.getVoices().length) jarvisGreeting(); };
+    }
+    setTimeout(jarvisGreeting, 800);
+
+    // ── TASK LEDGER ────────────────────────────────────────────────────────
+    function getTasks() {
+        try { return JSON.parse(localStorage.getItem('crm_tasks') || '[]'); } catch { return []; }
+    }
+    function saveTasks(tasks) {
+        try { localStorage.setItem('crm_tasks', JSON.stringify(tasks)); } catch {}
+    }
+
+    function addTask() {
+        const title = document.getElementById('task-title').value.trim();
+        if (!title) return;
+        const tasks = getTasks();
+        tasks.unshift({
+            id: Date.now(),
+            title,
+            priority: document.getElementById('task-priority').value,
+            due: document.getElementById('task-due').value,
+            done: false,
+            created: new Date().toISOString()
+        });
+        saveTasks(tasks);
+        document.getElementById('task-title').value = '';
+        document.getElementById('task-due').value = '';
+        renderTasks();
+        updateVitals();
+        setJarvisMsg('Task added: ' + title, true);
+    }
+
+    function toggleTask(id) {
+        const tasks = getTasks();
+        const t = tasks.find(x => x.id === id);
+        if (t) { t.done = !t.done; }
+        saveTasks(tasks);
+        renderTasks();
+        updateVitals();
+        if (t && t.done) setJarvisMsg('Task complete: ' + t.title, true);
+    }
+
+    function deleteTask(id) {
+        const tasks = getTasks().filter(x => x.id !== id);
+        saveTasks(tasks);
+        renderTasks();
+        updateVitals();
+    }
+
+    function renderTasks() {
+        const filter = (document.getElementById('task-filter') || {value: 'all'}).value;
+        let tasks = getTasks();
+        if (filter === 'open') tasks = tasks.filter(t => !t.done);
+        if (filter === 'done') tasks = tasks.filter(t => t.done);
+
+        const list = document.getElementById('task-list');
+        const empty = document.getElementById('task-empty');
+        if (!list) return;
+
+        if (tasks.length === 0) {
+            list.innerHTML = '';
+            empty.style.display = '';
+            return;
         }
+        empty.style.display = 'none';
+
+        const priorityColor = { high: 'border-l-red-500', normal: 'border-l-blue-400', low: 'border-l-gray-300' };
+        const priorityBadge = { high: 'bg-red-100 text-red-700', normal: 'bg-blue-100 text-blue-700', low: 'bg-gray-100 text-gray-600' };
+
+        list.innerHTML = tasks.map(t => `
+            <div class="bg-white rounded-lg border-l-4 ${priorityColor[t.priority] || 'border-l-blue-400'} shadow-sm p-4 flex items-center gap-4 ${t.done ? 'opacity-60' : ''}">
+                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${t.id})" class="w-5 h-5 accent-blue-600 cursor-pointer">
+                <div class="flex-1">
+                    <p class="font-medium text-gray-800 ${t.done ? 'task-done' : ''}">${escHtml(t.title)}</p>
+                    <div class="flex gap-3 mt-1 text-xs text-gray-500">
+                        <span class="px-2 py-0.5 rounded-full font-medium ${priorityBadge[t.priority] || ''}">${t.priority}</span>
+                        ${t.due ? `<span>Due: ${t.due}</span>` : ''}
+                        <span>Added ${new Date(t.created).toLocaleDateString()}</span>
+                    </div>
+                </div>
+                <button onclick="deleteTask(${t.id})" class="text-red-400 hover:text-red-600 text-lg font-bold leading-none">&times;</button>
+            </div>
+        `).join('');
+
+        renderDashTaskPreview();
+    }
+
+    function renderDashTaskPreview() {
+        const preview = document.getElementById('dash-task-preview');
+        if (!preview) return;
+        const open = getTasks().filter(t => !t.done).slice(0, 4);
+        if (open.length === 0) {
+            preview.innerHTML = '<p class="text-sm text-gray-400">No open tasks.</p>';
+            return;
+        }
+        const priorityDot = { high: 'bg-red-500', normal: 'bg-blue-500', low: 'bg-gray-400' };
+        preview.innerHTML = open.map(t => `
+            <div class="flex items-center gap-2 py-1">
+                <span class="w-2 h-2 rounded-full flex-shrink-0 ${priorityDot[t.priority] || 'bg-blue-400'}"></span>
+                <span class="text-sm text-gray-700 truncate">${escHtml(t.title)}</span>
+                ${t.due ? `<span class="text-xs text-gray-400 ml-auto">${t.due}</span>` : ''}
+            </div>
+        `).join('');
+    }
+
+    function escHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── VITALS ─────────────────────────────────────────────────────────────
+    function updateVitals() {
+        const openTasks = getTasks().filter(t => !t.done).length;
+        const doneTasks = getTasks().filter(t => t.done).length;
+        document.getElementById('vital-tasks').textContent = openTasks;
+        document.getElementById('vital-tasks-sub').textContent = doneTasks + ' completed';
+
+        // Static vitals (would be live-pulled from API in production)
+        document.getElementById('vital-calls').textContent = '3';
+        document.getElementById('vital-calls-sub').textContent = 'Today so far';
+        document.getElementById('vital-pipeline').textContent = '$28,646';
+        document.getElementById('vital-pipeline-sub').textContent = '3 open leads';
+        document.getElementById('vital-avg').textContent = '$9,549';
+        document.getElementById('vital-avg-sub').textContent = 'per qualified call';
+
+        // Update stat cards
+        document.getElementById('stat-leads').textContent = '3';
+        document.getElementById('stat-calls').textContent = '12';
+        document.getElementById('stat-pipeline').textContent = '$28,646';
+    }
+
+    // ── NAVIGATION ─────────────────────────────────────────────────────────
+    function showTab(tabName) {
+        ['dashboard','leads','calls','tasks'].forEach(t => {
+            document.getElementById(t + '-content').style.display = 'none';
+            const btn = document.getElementById('tab-' + t);
+            if (btn) btn.className = 'py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700';
+        });
+        document.getElementById(tabName + '-content').style.display = 'block';
+        const active = document.getElementById('tab-' + tabName);
+        if (active) active.className = 'py-4 px-2 border-b-2 border-blue-500 text-blue-600 font-medium text-sm';
+
+        if (tabName === 'tasks') renderTasks();
+        if (tabName === 'dashboard') renderDashTaskPreview();
+    }
+
+    // ── LEAD ACTIONS ───────────────────────────────────────────────────────
+    function showAddModal() {
+        document.getElementById('add-modal').classList.remove('hidden');
+        document.getElementById('add-modal').classList.add('flex');
+    }
+    function closeModal() {
+        document.getElementById('add-modal').classList.add('hidden');
+        document.getElementById('add-modal').classList.remove('flex');
+    }
+    function saveLead() {
+        const name = document.getElementById('lead-name').value;
+        const phone = document.getElementById('lead-phone').value;
+        if (name && phone) {
+            setJarvisMsg('New lead added: ' + name, true);
+            closeModal();
+            ['lead-name','lead-company','lead-phone','lead-value'].forEach(id => document.getElementById(id).value = '');
+        }
+    }
+    function editLead(id) { alert('Edit lead ' + id); }
+    function deleteLead(id) { if (confirm('Delete this lead?')) alert('Lead ' + id + ' deleted'); }
+
+    // ── INIT ───────────────────────────────────────────────────────────────
+    updateVitals();
+    renderDashTaskPreview();
     </script>
 </body>
 </html>
