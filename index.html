@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>CallRail CRM</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Phoenix Phase Converters - CallRail CRM Dashboard for tracking leads, calls, Google Ads campaigns, and SEO performance.">
+    <title>Phoenix Phase Converters — CallRail CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50">
@@ -9,7 +12,7 @@
         <!-- Header -->
         <header class="bg-white shadow border-b">
             <div class="max-w-7xl mx-auto px-4 py-4">
-                <h1 class="text-2xl font-bold text-blue-600">CallRail CRM</h1>
+                <h1 class="text-2xl font-bold text-blue-600">Phoenix Phase Converters — CRM</h1>
             </div>
         </header>
 
@@ -20,6 +23,9 @@
                     <button onclick="showTab('dashboard')" id="tab-dashboard" class="py-4 px-2 border-b-2 border-blue-500 text-blue-600 font-medium text-sm">Dashboard</button>
                     <button onclick="showTab('leads')" id="tab-leads" class="py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700">Leads</button>
                     <button onclick="showTab('calls')" id="tab-calls" class="py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700">Calls</button>
+                    <button onclick="showTab('google-ads')" id="tab-google-ads" class="py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700">Google Ads</button>
+                    <button onclick="showTab('seo')" id="tab-seo" class="py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700">SEO</button>
+                    <button onclick="showTab('reconciliation')" id="tab-reconciliation" class="py-4 px-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-gray-700">Reconciliation</button>
                 </div>
             </div>
         </nav>
@@ -99,7 +105,7 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4">
                                     <div class="font-medium">John Smith</div>
-                                    <div class="text-sm text-gray-500">Smith Construction</div>
+                                    <div class="text-sm text-gray-500">Smith Manufacturing</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">(555) 123-4567</td>
                                 <td class="px-6 py-4 text-sm">Google Ads</td>
@@ -115,7 +121,7 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4">
                                     <div class="font-medium">Sarah Johnson</div>
-                                    <div class="text-sm text-gray-500">Johnson Real Estate</div>
+                                    <div class="text-sm text-gray-500">Johnson Machine Shop</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">(555) 987-6543</td>
                                 <td class="px-6 py-4 text-sm">Facebook Ads</td>
@@ -176,6 +182,563 @@
                     </table>
                 </div>
             </div>
+            <!-- Google Ads Tab -->
+            <div id="google-ads-content" style="display: none;">
+                <h2 class="text-2xl font-bold mb-6">Google Ads Performance</h2>
+
+                <!-- Ads Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow border">
+                        <h3 class="text-sm text-gray-600">Ad Spend (MTD)</h3>
+                        <p class="text-2xl font-bold">$4,280</p>
+                        <p class="text-xs text-green-600 mt-1">12% under budget</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border">
+                        <h3 class="text-sm text-gray-600">Clicks</h3>
+                        <p class="text-2xl font-bold">1,842</p>
+                        <p class="text-xs text-green-600 mt-1">+18% vs last month</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border">
+                        <h3 class="text-sm text-gray-600">Conversions</h3>
+                        <p class="text-2xl font-bold">47</p>
+                        <p class="text-xs text-green-600 mt-1">2.55% conv. rate</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border">
+                        <h3 class="text-sm text-gray-600">Cost per Lead</h3>
+                        <p class="text-2xl font-bold">$91.06</p>
+                        <p class="text-xs text-red-600 mt-1">+5% vs last month</p>
+                    </div>
+                </div>
+
+                <!-- Campaign Table -->
+                <div class="bg-white rounded-lg shadow border mb-8">
+                    <div class="p-6 border-b flex justify-between items-center">
+                        <h3 class="text-lg font-semibold">Campaigns</h3>
+                        <select id="ads-date-range" class="border rounded-lg px-3 py-1 text-sm text-gray-600">
+                            <option>Last 30 Days</option>
+                            <option>Last 7 Days</option>
+                            <option>This Month</option>
+                            <option>Last Month</option>
+                        </select>
+                    </div>
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Campaign</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Impressions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clicks</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CTR</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CPC</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Spend</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conversions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="font-medium">Brand - Exact Match</div>
+                                    <div class="text-sm text-gray-500">Search</div>
+                                </td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Active</span></td>
+                                <td class="px-6 py-4 text-sm">12,450</td>
+                                <td class="px-6 py-4 text-sm">892</td>
+                                <td class="px-6 py-4 text-sm">7.16%</td>
+                                <td class="px-6 py-4 text-sm">$1.24</td>
+                                <td class="px-6 py-4 text-sm font-medium">$1,106</td>
+                                <td class="px-6 py-4 text-sm font-medium">22</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="font-medium">Phase Converters - Local</div>
+                                    <div class="text-sm text-gray-500">Search</div>
+                                </td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Active</span></td>
+                                <td class="px-6 py-4 text-sm">8,320</td>
+                                <td class="px-6 py-4 text-sm">524</td>
+                                <td class="px-6 py-4 text-sm">6.30%</td>
+                                <td class="px-6 py-4 text-sm">$3.42</td>
+                                <td class="px-6 py-4 text-sm font-medium">$1,792</td>
+                                <td class="px-6 py-4 text-sm font-medium">15</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="font-medium">Rotary Converters</div>
+                                    <div class="text-sm text-gray-500">Search</div>
+                                </td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Active</span></td>
+                                <td class="px-6 py-4 text-sm">5,180</td>
+                                <td class="px-6 py-4 text-sm">312</td>
+                                <td class="px-6 py-4 text-sm">6.02%</td>
+                                <td class="px-6 py-4 text-sm">$2.85</td>
+                                <td class="px-6 py-4 text-sm font-medium">$889</td>
+                                <td class="px-6 py-4 text-sm font-medium">8</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="font-medium">Display - Retargeting (CNC/Machine Shops)</div>
+                                    <div class="text-sm text-gray-500">Display</div>
+                                </td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Paused</span></td>
+                                <td class="px-6 py-4 text-sm">24,600</td>
+                                <td class="px-6 py-4 text-sm">114</td>
+                                <td class="px-6 py-4 text-sm">0.46%</td>
+                                <td class="px-6 py-4 text-sm">$4.33</td>
+                                <td class="px-6 py-4 text-sm font-medium">$493</td>
+                                <td class="px-6 py-4 text-sm font-medium">2</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Call Attribution from Ads -->
+                <div class="bg-white rounded-lg shadow border">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold">Call Attribution from Google Ads</h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="font-medium">John Smith</p>
+                                <p class="text-sm text-gray-500">Keyword: "phase converter near me"</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Campaign</p>
+                                <p class="text-sm font-medium">Phase Converters - Local</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Call Duration</p>
+                                <p class="text-sm font-medium">5:24</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-medium text-green-600">$15,000</p>
+                                <p class="text-sm text-gray-500">Aug 30</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="font-medium">Sarah Johnson</p>
+                                <p class="text-sm text-gray-500">Keyword: "rotary phase converter price"</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Campaign</p>
+                                <p class="text-sm font-medium">Rotary Converters</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Call Duration</p>
+                                <p class="text-sm font-medium">2:36</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-medium text-green-600">$8,500</p>
+                                <p class="text-sm text-gray-500">Aug 29</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="font-medium">Mike Davis</p>
+                                <p class="text-sm text-gray-500">Keyword: "best phase converter brand"</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Campaign</p>
+                                <p class="text-sm font-medium">Brand - Exact Match</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Call Duration</p>
+                                <p class="text-sm font-medium">7:12</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-medium text-green-600">$25,000</p>
+                                <p class="text-sm text-gray-500">Aug 28</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEO Tab -->
+            <div id="seo-content" style="display: none;">
+                <h2 class="text-2xl font-bold mb-6">SEO Performance</h2>
+
+                <!-- SEO Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow border">
+                        <h3 class="text-sm text-gray-600">Organic Traffic (MTD)</h3>
+                        <p class="text-2xl font-bold">3,412</p>
+                        <p class="text-xs text-green-600 mt-1">+24% vs last month</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border">
+                        <h3 class="text-sm text-gray-600">Organic Leads</h3>
+                        <p class="text-2xl font-bold">28</p>
+                        <p class="text-xs text-green-600 mt-1">0.82% conv. rate</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border">
+                        <h3 class="text-sm text-gray-600">Keywords in Top 10</h3>
+                        <p class="text-2xl font-bold">34</p>
+                        <p class="text-xs text-green-600 mt-1">+6 new this month</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow border">
+                        <h3 class="text-sm text-gray-600">Domain Authority</h3>
+                        <p class="text-2xl font-bold">42</p>
+                        <p class="text-xs text-green-600 mt-1">+2 pts this quarter</p>
+                    </div>
+                </div>
+
+                <!-- Keyword Rankings Table -->
+                <div class="bg-white rounded-lg shadow border mb-8">
+                    <div class="p-6 border-b flex justify-between items-center">
+                        <h3 class="text-lg font-semibold">Keyword Rankings</h3>
+                        <select id="seo-date-range" class="border rounded-lg px-3 py-1 text-sm text-gray-600">
+                            <option>Last 30 Days</option>
+                            <option>Last 7 Days</option>
+                            <option>Last 90 Days</option>
+                        </select>
+                    </div>
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keyword</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Position</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Change</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Volume</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Traffic</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Calls Generated</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium">phase converter near me</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">#3</span></td>
+                                <td class="px-6 py-4 text-sm text-green-600 font-medium">+2</td>
+                                <td class="px-6 py-4 text-sm">2,400</td>
+                                <td class="px-6 py-4 text-sm">482</td>
+                                <td class="px-6 py-4 text-sm font-medium">12</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium">rotary phase converter price</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">#5</span></td>
+                                <td class="px-6 py-4 text-sm text-green-600 font-medium">+1</td>
+                                <td class="px-6 py-4 text-sm">1,800</td>
+                                <td class="px-6 py-4 text-sm">318</td>
+                                <td class="px-6 py-4 text-sm font-medium">8</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium">single to 3 phase converter</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">#8</span></td>
+                                <td class="px-6 py-4 text-sm text-green-600 font-medium">+4</td>
+                                <td class="px-6 py-4 text-sm">1,200</td>
+                                <td class="px-6 py-4 text-sm">196</td>
+                                <td class="px-6 py-4 text-sm font-medium">5</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium">static phase converter</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">#12</span></td>
+                                <td class="px-6 py-4 text-sm text-red-600 font-medium">-2</td>
+                                <td class="px-6 py-4 text-sm">3,600</td>
+                                <td class="px-6 py-4 text-sm">142</td>
+                                <td class="px-6 py-4 text-sm font-medium">3</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium">industrial phase converter</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">#18</span></td>
+                                <td class="px-6 py-4 text-sm text-green-600 font-medium">+7</td>
+                                <td class="px-6 py-4 text-sm">880</td>
+                                <td class="px-6 py-4 text-sm">64</td>
+                                <td class="px-6 py-4 text-sm font-medium">1</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium">phase converter sizing guide</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">#6</span></td>
+                                <td class="px-6 py-4 text-sm text-gray-500 font-medium">0</td>
+                                <td class="px-6 py-4 text-sm">1,500</td>
+                                <td class="px-6 py-4 text-sm">275</td>
+                                <td class="px-6 py-4 text-sm font-medium">6</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Organic Call Attribution -->
+                <div class="bg-white rounded-lg shadow border mb-8">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold">Organic Search Call Attribution</h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="font-medium">Tom Richards</p>
+                                <p class="text-sm text-gray-500">Landing: /rotary-phase-converters</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Search Term</p>
+                                <p class="text-sm font-medium">rotary phase converter for sale</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Call Duration</p>
+                                <p class="text-sm font-medium">4:18</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-medium text-green-600">$12,000</p>
+                                <p class="text-sm text-gray-500">Aug 31</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="font-medium">Lisa Chen</p>
+                                <p class="text-sm text-gray-500">Landing: /static-phase-converters</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Search Term</p>
+                                <p class="text-sm font-medium">3 phase power for shop</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">Call Duration</p>
+                                <p class="text-sm font-medium">6:45</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-medium text-green-600">$18,500</p>
+                                <p class="text-sm text-gray-500">Aug 30</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO vs Paid Comparison -->
+                <div class="bg-white rounded-lg shadow border">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold">Organic vs Paid Comparison</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-0 divide-x">
+                        <div class="p-6">
+                            <h4 class="text-sm font-semibold text-gray-500 uppercase mb-4">Organic (SEO)</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between"><span class="text-sm text-gray-600">Leads</span><span class="font-medium">28</span></div>
+                                <div class="flex justify-between"><span class="text-sm text-gray-600">Cost per Lead</span><span class="font-medium text-green-600">$0.00</span></div>
+                                <div class="flex justify-between"><span class="text-sm text-gray-600">Pipeline Value</span><span class="font-medium">$142,000</span></div>
+                                <div class="flex justify-between"><span class="text-sm text-gray-600">Calls Generated</span><span class="font-medium">35</span></div>
+                                <div class="flex justify-between"><span class="text-sm text-gray-600">Avg Call Duration</span><span class="font-medium">5:32</span></div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <h4 class="text-sm font-semibold text-gray-500 uppercase mb-4">Paid (Google Ads)</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between"><span class="text-sm text-gray-600">Leads</span><span class="font-medium">47</span></div>
+                                <div class="flex justify-between"><span class="text-sm text-gray-600">Cost per Lead</span><span class="font-medium text-red-600">$91.06</span></div>
+                                <div class="flex justify-between"><span class="text-sm text-gray-600">Pipeline Value</span><span class="font-medium">$198,500</span></div>
+                                <div class="flex justify-between"><span class="text-sm text-gray-600">Calls Generated</span><span class="font-medium">52</span></div>
+                                <div class="flex justify-between"><span class="text-sm text-gray-600">Avg Call Duration</span><span class="font-medium">4:48</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reconciliation Tab -->
+            <div id="reconciliation-content" style="display: none;">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Nightly Reconciliation</h2>
+                    <div class="flex items-center space-x-3">
+                        <select id="recon-date" class="border rounded-lg px-3 py-2 text-sm text-gray-600">
+                            <option>2026-10-25</option>
+                            <option>2026-10-24</option>
+                            <option>2026-10-23</option>
+                            <option>2026-10-22</option>
+                            <option>2026-10-21</option>
+                        </select>
+                        <span id="recon-status" class="px-4 py-2 text-sm font-bold rounded-full bg-green-100 text-green-800">PASS</span>
+                    </div>
+                </div>
+
+                <!-- Status Banner -->
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <p class="ml-3 text-sm font-medium text-green-800">All matched orders have corresponding CallRail values and Google Ads conversions.</p>
+                    </div>
+                </div>
+
+                <!-- Reconciliation Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Matched Orders -->
+                    <div class="bg-white rounded-lg shadow border">
+                        <div class="p-4 border-b bg-gray-50">
+                            <h3 class="text-sm font-semibold text-gray-700 uppercase">Matched Orders</h3>
+                        </div>
+                        <div class="p-6 space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Count</span>
+                                <span class="text-2xl font-bold">10</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Revenue</span>
+                                <span class="text-2xl font-bold text-green-600">$2,500</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CallRail Values -->
+                    <div class="bg-white rounded-lg shadow border">
+                        <div class="p-4 border-b bg-gray-50">
+                            <h3 class="text-sm font-semibold text-gray-700 uppercase">CallRail Values</h3>
+                        </div>
+                        <div class="p-6 space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Count</span>
+                                <span class="text-2xl font-bold">10</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Revenue</span>
+                                <span class="text-2xl font-bold text-green-600">$2,500</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Google Ads Conversions -->
+                    <div class="bg-white rounded-lg shadow border">
+                        <div class="p-4 border-b bg-gray-50">
+                            <h3 class="text-sm font-semibold text-gray-700 uppercase">Google Ads Conversions</h3>
+                        </div>
+                        <div class="p-6 space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Accepted</span>
+                                <span class="text-2xl font-bold text-green-600">8</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Pending</span>
+                                <span class="text-xl font-bold text-yellow-600">2</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Rejected</span>
+                                <span class="text-xl font-bold text-gray-400">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exceptions & Cycle Status -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- Exceptions -->
+                    <div class="bg-white rounded-lg shadow border">
+                        <div class="p-4 border-b bg-gray-50">
+                            <h3 class="text-sm font-semibold text-gray-700 uppercase">Exceptions</h3>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm text-gray-600">Unmatched Orders</span>
+                                <span class="text-lg font-bold text-green-600">0</span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm text-gray-600">Duplicate Orders</span>
+                                <span class="text-lg font-bold text-green-600">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Last Successful Cycles -->
+                    <div class="bg-white rounded-lg shadow border">
+                        <div class="p-4 border-b bg-gray-50">
+                            <h3 class="text-sm font-semibold text-gray-700 uppercase">Last Successful Cycles</h3>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm text-gray-600">Matcher</span>
+                                <span class="text-sm font-mono font-medium">2026-10-24 23:59:59</span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm text-gray-600">Updater</span>
+                                <span class="text-sm font-mono font-medium">2026-10-24 23:59:59</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Reconciliation History -->
+                <div class="bg-white rounded-lg shadow border">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold">7-Day History</h3>
+                    </div>
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Orders</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Revenue</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ads Accepted</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ads Pending</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Exceptions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 text-sm font-medium">2026-10-25</td>
+                                <td class="px-6 py-4 text-sm">10</td>
+                                <td class="px-6 py-4 text-sm font-medium">$2,500</td>
+                                <td class="px-6 py-4 text-sm">8</td>
+                                <td class="px-6 py-4 text-sm">2</td>
+                                <td class="px-6 py-4 text-sm">0</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">PASS</span></td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 text-sm font-medium">2026-10-24</td>
+                                <td class="px-6 py-4 text-sm">12</td>
+                                <td class="px-6 py-4 text-sm font-medium">$3,100</td>
+                                <td class="px-6 py-4 text-sm">11</td>
+                                <td class="px-6 py-4 text-sm">1</td>
+                                <td class="px-6 py-4 text-sm">0</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">PASS</span></td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 text-sm font-medium">2026-10-23</td>
+                                <td class="px-6 py-4 text-sm">8</td>
+                                <td class="px-6 py-4 text-sm font-medium">$1,950</td>
+                                <td class="px-6 py-4 text-sm">7</td>
+                                <td class="px-6 py-4 text-sm">1</td>
+                                <td class="px-6 py-4 text-sm">0</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">PASS</span></td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 text-sm font-medium">2026-10-22</td>
+                                <td class="px-6 py-4 text-sm">15</td>
+                                <td class="px-6 py-4 text-sm font-medium">$4,200</td>
+                                <td class="px-6 py-4 text-sm">13</td>
+                                <td class="px-6 py-4 text-sm">1</td>
+                                <td class="px-6 py-4 text-sm">1</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">WARN</span></td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 text-sm font-medium">2026-10-21</td>
+                                <td class="px-6 py-4 text-sm">9</td>
+                                <td class="px-6 py-4 text-sm font-medium">$2,800</td>
+                                <td class="px-6 py-4 text-sm">9</td>
+                                <td class="px-6 py-4 text-sm">0</td>
+                                <td class="px-6 py-4 text-sm">0</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">PASS</span></td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 text-sm font-medium">2026-10-20</td>
+                                <td class="px-6 py-4 text-sm">11</td>
+                                <td class="px-6 py-4 text-sm font-medium">$3,400</td>
+                                <td class="px-6 py-4 text-sm">10</td>
+                                <td class="px-6 py-4 text-sm">1</td>
+                                <td class="px-6 py-4 text-sm">0</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">PASS</span></td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 text-sm font-medium">2026-10-19</td>
+                                <td class="px-6 py-4 text-sm">7</td>
+                                <td class="px-6 py-4 text-sm font-medium">$1,750</td>
+                                <td class="px-6 py-4 text-sm">7</td>
+                                <td class="px-6 py-4 text-sm">0</td>
+                                <td class="px-6 py-4 text-sm">0</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">PASS</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -202,6 +765,9 @@
             document.getElementById('dashboard-content').style.display = 'none';
             document.getElementById('leads-content').style.display = 'none';
             document.getElementById('calls-content').style.display = 'none';
+            document.getElementById('google-ads-content').style.display = 'none';
+            document.getElementById('seo-content').style.display = 'none';
+            document.getElementById('reconciliation-content').style.display = 'none';
             
             // Show selected content
             document.getElementById(tabName + '-content').style.display = 'block';
